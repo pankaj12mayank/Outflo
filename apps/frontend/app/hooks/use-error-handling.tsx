@@ -30,13 +30,13 @@ export function handleAPIError(error: unknown): string {
     if (status === 503) return "Service temporarily unavailable.";
 
     if (status === 422) {
-      if (data.error?.detail) {
+      if (data?.error?.detail) {
         if (typeof data.error.detail === "string") return data.error.detail;
         if (Array.isArray(data.error.detail) && data.error.detail[0]?.msg) {
           return data.error.detail[0].msg;
         }
       }
-      if (data.detail) {
+      if (data?.detail) {
         if (typeof data.detail === "string") return data.detail;
         if (Array.isArray(data.detail) && data.detail[0]?.msg) {
           return data.detail[0].msg;
@@ -45,7 +45,7 @@ export function handleAPIError(error: unknown): string {
       return "Validation failed. Please check your input.";
     }
 
-    if (data.error?.message) return data.error.message;
+    if (data?.error?.message) return data.error.message;
   }
 
   if (axiosError.message) return axiosError.message;

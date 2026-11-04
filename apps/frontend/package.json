@@ -5,7 +5,7 @@
     "clean": "node -e \"require('fs').rmSync('.next',{recursive:true,force:true})\"",
     "predev": "node scripts/guard-no-duplicate-modules.js",
     "prebuild": "node scripts/guard-no-duplicate-modules.js",
-    "dev": "next dev",
+    "dev": "next dev --turbo",
     "dev:clean": "npm run clean && next dev",
     "build": "next build",
     "build:clean": "npm run clean && next build",
@@ -58,3 +58,4 @@
     "vitest": "^4.1.6"
   }
 }
+

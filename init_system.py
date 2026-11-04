@@ -27,7 +27,7 @@ def test_system_owner_login():
             f"{BASE_URL}/api/v1/system-owner-auth/login",
             json={
                 "email": "admin@outflo.com",
-                "password": "Outflo@2024!",
+                "password": "Admin@123",
                 "device_info": {"device_id": "test", "device_type": "desktop"}
             }
         )

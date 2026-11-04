@@ -15,7 +15,7 @@ export function SoPageLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
+    <div className="w-full px-4 sm:px-6 py-6 sm:py-8">
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6 sm:mb-8">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{title}</h1>

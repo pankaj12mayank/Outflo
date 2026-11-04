@@ -86,7 +86,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+        <div className="w-full px-4 py-4 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div
               className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center cursor-pointer"
@@ -106,7 +106,7 @@ export default function ProfilePage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-6">
+      <main className="w-full px-4 py-8 space-y-6">
         {/* User Info */}
         <Card>
           <CardHeader>

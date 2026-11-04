@@ -496,7 +496,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <Sidebar />
       <main className="md:pl-64 pl-0">
-        <div className="p-4 sm:p-6 md:p-8 pt-16 md:pt-8 max-w-full overflow-x-hidden">{children}</div>
+        <div className="p-2 sm:p-4 md:p-6 pt-16 md:pt-6 max-w-full overflow-x-hidden">{children}</div>
       </main>
     </div>
   );

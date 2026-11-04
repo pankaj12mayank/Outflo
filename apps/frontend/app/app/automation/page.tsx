@@ -21,7 +21,7 @@ const workflows = [
 
 export default function AutomationPage() {
   return (
-    <div className="space-y-8 max-w-3xl">
+    <div className="space-y-8 w-full">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
         <div className="flex items-center gap-3 mb-2">
           <Workflow className="w-8 h-8 text-purple-400" />
