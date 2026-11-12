@@ -35,6 +35,7 @@ import {
   ChevronLeft,
   Plus,
   Minus,
+  Cpu,
 } from "lucide-react";
 import { useAuth } from "@/app/hooks/useAuth";
 import { usePermission } from "@/app/hooks/usePermission";
@@ -62,6 +63,7 @@ const systemOwnerNav = [
   { name: "Billing", href: "/system-owner/payments", icon: CreditCard, permissions: ["billing:read"] },
   { name: "Email", href: "/system-owner/email", icon: Mail, permissions: ["cms:read"] },
   { name: "Notifications", href: "/system-owner/notifications", icon: Bell, permissions: ["notifications:read"] },
+  { name: "AI Providers", href: "/app/ai-providers", icon: Cpu, permissions: [] },
   { name: "Settings", href: "/system-owner/settings", icon: Settings, permissions: ["settings:read"] },
   { name: "Dashboard", href: "/system-owner/dashboard", icon: BarChart3, permissions: ["analytics:read"] },
 ];
