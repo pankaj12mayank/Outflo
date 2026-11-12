@@ -180,8 +180,8 @@ export default function NotificationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {notifications.map(notif => (
-                    <TableRow key={notif._id} className={!notif.is_read ? 'bg-gray-800/30' : ''}>
+                  {notifications.map((notif, index) => (
+                    <TableRow key={notif._id || `notif-${index}`} className={!notif.is_read ? 'bg-gray-800/30' : ''}>
                       <TableCell><Badge variant="outline">{typeLabels[notif.type] || notif.type}</Badge></TableCell>
                       <TableCell className="font-medium">{notif.title}</TableCell>
                       <TableCell className="max-w-md truncate">{notif.message}</TableCell>
@@ -218,8 +218,8 @@ export default function NotificationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {templates.map(template => (
-                    <TableRow key={template._id}>
+                  {templates.map((template, index) => (
+                    <TableRow key={template._id || `template-${index}`}>
                       <TableCell className="font-medium">{template.name}</TableCell>
                       <TableCell className="max-w-xs truncate">{template.subject}</TableCell>
                       <TableCell><Badge variant="outline">{typeLabels[template.type] || template.type}</Badge></TableCell>
@@ -253,8 +253,8 @@ export default function NotificationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {emailLogs.map(log => (
-                    <TableRow key={log._id}>
+                  {emailLogs.map((log, index) => (
+                    <TableRow key={log._id || `log-${index}`}>
                       <TableCell>{log.recipient_email}</TableCell>
                       <TableCell className="max-w-xs truncate">{log.subject}</TableCell>
                       <TableCell><Badge className={statusColors[log.status]}>{log.status}</Badge></TableCell>

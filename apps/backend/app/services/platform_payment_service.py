@@ -19,7 +19,8 @@ class PlatformPaymentService:
 
     @staticmethod
     async def get_settings() -> Dict[str, Any]:
-        doc = await PlatformPaymentService._settings_coll().find_one(
+        coll = await PlatformPaymentService._settings_coll()
+        doc = await coll.find_one(
             {"key": PlatformPaymentService.SETTINGS_KEY}
         )
         defaults = {
@@ -47,7 +48,8 @@ class PlatformPaymentService:
 
     @staticmethod
     async def save_settings(gateways: Dict[str, Any]) -> Dict[str, Any]:
-        await PlatformPaymentService._settings_coll().update_one(
+        coll = await PlatformPaymentService._settings_coll()
+        await coll.update_one(
             {"key": PlatformPaymentService.SETTINGS_KEY},
             {
                 "$set": {
