@@ -29,7 +29,7 @@ cd D:\Py_Projects\Outflo
 
 - System Owner: http://localhost:3000/system-owner/login  
   - Email: `admin@outflo.com`  
-  - Password: `Outflo@2024!`
+  - Password: `Admin@123`
 - Platform Setup: http://localhost:3000/system-owner/setup
 
 ---
@@ -225,9 +225,9 @@ Then open: **`/system-owner/setup`**
 
 ---
 
-## Part F — Cloud AI (vs Ollama local)
+## Part F — Cloud AI
 
-Render cannot run Ollama. Use paid AI APIs:
+Use a paid AI API (OpenAI, Anthropic, or any OpenAI-compatible endpoint):
 
 ### OpenAI (Simplest)
 
@@ -264,9 +264,7 @@ OPENAI_BASE_URL=https://api.groq.com/openai/v1
 AI_DEFAULT_MODEL=llama-3.3-70b-versatile
 ```
 
-Test: login → `/app/ai` → connection status green.
-
-Local dev: `AI_PROVIDER=ollama` + Ollama desktop running.
+Test: login → `/app/ai-providers` → add or select a provider and click **Test**.
 
 ---
 
@@ -277,7 +275,7 @@ Local dev: `AI_PROVIDER=ollama` + Ollama desktop running.
 | Render API | Sleep after idle, cold start |
 | Vercel | Bandwidth/build limits |
 | Atlas M0 | 512MB storage |
-| Ollama AI | Not on Render — use paid API |
+| AI provider | Use a paid API key — see Part F |
 | Playwright scraping | Hard on Render free — optional disable |
 | Stripe payments | UI/mock only — real keys later |
 

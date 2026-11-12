@@ -8,11 +8,9 @@ import { Save, Cpu, RefreshCw, Loader2 } from "lucide-react";
 
 export default function SystemOwnerAiSettingsPage() {
   const [form, setForm] = useState({
-    ai_provider: "ollama",
+    ai_provider: "openai",
     openai_api_key: "",
     anthropic_api_key: "",
-    ollama_base_url: "http://localhost:11434",
-    ollama_model: "llama3.2",
   });
   const [runtime, setRuntime] = useState<Record<string, unknown> | null>(null);
   const [saving, setSaving] = useState(false);
@@ -24,11 +22,9 @@ export default function SystemOwnerAiSettingsPage() {
       });
       const s = res.data.stored || {};
       setForm({
-        ai_provider: s.ai_provider || "ollama",
+        ai_provider: s.ai_provider || "openai",
         openai_api_key: s.openai_api_key || "",
         anthropic_api_key: s.anthropic_api_key || "",
-        ollama_base_url: s.ollama_base_url || "http://localhost:11434",
-        ollama_model: s.ollama_model || "llama3.2",
       });
       setRuntime(res.data.runtime);
     } catch {
@@ -77,7 +73,8 @@ export default function SystemOwnerAiSettingsPage() {
           <Cpu className="w-8 h-8 text-purple-400" /> AI & API Settings
         </h1>
         <p className="text-gray-400">
-          Configure AI providers (OpenAI, Anthropic, or Ollama). Settings are stored in database, not in files.
+          Configure the platform default OpenAI or Anthropic keys. Custom and
+          per-organization providers are managed under AI Providers.
         </p>
       </div>
 
@@ -111,8 +108,8 @@ export default function SystemOwnerAiSettingsPage() {
         <div className="space-y-6">
           <div>
             <label className="block text-sm font-medium text-gray-300 mb-3">AI Provider</label>
-            <div className="grid grid-cols-3 gap-4">
-              {["ollama", "openai", "anthropic"].map((provider) => (
+            <div className="grid grid-cols-2 gap-4">
+              {["openai", "anthropic"].map((provider) => (
                 <button
                   key={provider}
                   onClick={() => setForm({ ...form, ai_provider: provider })}
@@ -124,7 +121,7 @@ export default function SystemOwnerAiSettingsPage() {
                 >
                   <div className="text-sm font-medium capitalize">{provider}</div>
                   <div className="text-xs mt-1 opacity-70">
-                    {provider === "ollama" ? "Local model" : provider === "openai" ? "GPT-4, GPT-4o" : "Claude 3.5"}
+                    {provider === "openai" ? "GPT-4, GPT-4o" : "Claude 3.5"}
                   </div>
                 </button>
               ))}
@@ -163,26 +160,6 @@ export default function SystemOwnerAiSettingsPage() {
             </div>
           )}
 
-          {form.ai_provider === "ollama" && (
-            <div className="grid grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Ollama URL</label>
-                <input
-                  className="w-full rounded-xl bg-[#0a0a0f] border border-white/10 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-500/50 focus:outline-none"
-                  value={form.ollama_base_url}
-                  onChange={(e) => setForm({ ...form, ollama_base_url: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-3">Model</label>
-                <input
-                  className="w-full rounded-xl bg-[#0a0a0f] border border-white/10 px-4 py-3 text-white placeholder-gray-500 focus:border-purple-500/50 focus:outline-none"
-                  value={form.ollama_model}
-                  onChange={(e) => setForm({ ...form, ollama_model: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

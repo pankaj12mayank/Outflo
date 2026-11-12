@@ -18,11 +18,9 @@ router = APIRouter(prefix="/system-owner/platform", tags=["System Owner Platform
 
 
 class AiSettingsUpdate(BaseModel):
-    ai_provider: str = "ollama"
+    ai_provider: str = "openai"
     openai_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
-    ollama_base_url: Optional[str] = "http://localhost:11434"
-    ollama_model: Optional[str] = "llama3.2"
 
 
 class TestEmailRequest(BaseModel):
@@ -67,8 +65,7 @@ async def get_platform_status(_user: dict = Depends(get_current_system_owner)):
 async def run_health_check(_user: dict = Depends(get_current_system_owner)):
     backend = await MonitoringService.check_system_health()
     mongodb = await MonitoringService.check_mongodb_health()
-    ollama = await MonitoringService.check_ollama_health()
-    return {"backend": backend, "mongodb": mongodb, "ollama": ollama}
+    return {"backend": backend, "mongodb": mongodb}
 
 
 @router.post("/purge-demo-data")
@@ -139,8 +136,6 @@ async def get_ai_settings(_user: dict = Depends(get_current_system_owner)):
             "ai_provider": ai.get("ai_provider") or runtime["ai_provider"],
             "openai_api_key_set": bool(ai.get("openai_api_key") or runtime.get("openai_api_key")),
             "anthropic_api_key_set": bool(ai.get("anthropic_api_key") or runtime.get("anthropic_api_key")),
-            "ollama_base_url": ai.get("ollama_base_url") or runtime["ollama_base_url"],
-            "ollama_model": ai.get("ollama_model") or runtime["ollama_model"],
             "openai_api_key": ai.get("openai_api_key", ""),
             "anthropic_api_key": ai.get("anthropic_api_key", ""),
         },
@@ -163,8 +158,4 @@ async def save_ai_settings(
         os.environ["OPENAI_API_KEY"] = ai["openai_api_key"]
     if ai.get("anthropic_api_key"):
         os.environ["ANTHROPIC_API_KEY"] = ai["anthropic_api_key"]
-    if ai.get("ollama_base_url"):
-        os.environ["OLLAMA_BASE_URL"] = ai["ollama_base_url"]
-    if ai.get("ollama_model"):
-        os.environ["OLLAMA_MODEL"] = ai["ollama_model"]
     return {"message": "AI settings saved", "stored": saved.get("ai")}

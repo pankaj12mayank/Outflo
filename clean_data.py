@@ -71,7 +71,7 @@ async def clean():
     print(f"\n🔒 system_owner_users: {so} (protected)")
     
     print(f"\n✅ Total documents deleted: {total}")
-    print("\nSystem Owner login: admin@outflo.com / Outflo@2024!")
+    print("\nSystem Owner login: admin@outflo.com / Admin@123")
     
     client.close()
 

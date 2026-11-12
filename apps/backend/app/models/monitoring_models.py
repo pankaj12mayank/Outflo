@@ -50,7 +50,6 @@ class SystemComponent(str, Enum):
     BACKEND = "backend"
     FRONTEND = "frontend"
     MONGODB = "mongodb"
-    OLLAMA = "ollama"
     REDIS = "redis"
     WORKER = "worker"
     SCRAPER = "scraper"

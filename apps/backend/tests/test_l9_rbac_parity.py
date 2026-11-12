@@ -49,6 +49,9 @@ FRONTEND_ORG_ADMIN_PERMISSIONS = [
     "settings:update",
     "notifications:read",
     "monitoring:read",
+    "ai:read",
+    "ai:write",
+    "ai:manage",
 ]
 
 FRONTEND_TEAM_MEMBER_PERMISSIONS = [
@@ -60,6 +63,8 @@ FRONTEND_TEAM_MEMBER_PERMISSIONS = [
     "sequences:read",
     "scraping:read",
     "settings:read",
+    "ai:read",
+    "ai:write",
 ]
 
 

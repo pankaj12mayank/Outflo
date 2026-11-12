@@ -4,8 +4,9 @@ import logging
 import json
 from datetime import datetime
 
-from .providers import AIProvider, AIResponse, AIRequest, OllamaProvider, get_provider_manager
+from .providers import AIProvider, AIResponse, AIRequest, get_provider_manager
 from .prompts import get_prompt, render_prompt, PromptType
+from app.core.config import settings
 from app.core.logging import ai_logger
 
 logger = logging.getLogger(__name__)
@@ -65,14 +66,29 @@ class AIEngine:
     async def _generate(
         self,
         prompt: str,
-        model: str = "llama3.2",
+        model: Optional[str] = None,
         system: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 500,
         feature: str = "unknown",
         max_retries: int = 3,
     ) -> tuple[str, AIUsage]:
-        provider = self.provider.get_active() or OllamaProvider()
+        provider = self.provider.get_active()
+        model = model or settings.ai_default_model
+        if provider is None:
+            usage = AIUsage(
+                timestamp=datetime.utcnow(),
+                model=model,
+                feature=feature,
+                prompt_tokens=0,
+                completion_tokens=0,
+                total_tokens=0,
+                latency_ms=0,
+                cost=0,
+                success=False,
+                error="No AI provider configured",
+            )
+            return "AI service unavailable: no AI provider is configured.", usage
         request = AIRequest(
             prompt=prompt,
             system=system,
@@ -142,49 +158,36 @@ class AIEngine:
     async def _chat(
         self,
         messages: list[dict],
-        model: str = "llama3.2",
+        model: Optional[str] = None,
         system: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 500,
         feature: str = "unknown",
     ) -> tuple[str, AIUsage]:
-        provider = self.provider.get_active() or OllamaProvider()
+        """Run a chat-style conversation through the single-turn provider interface.
 
-        try:
-            response = await provider.chat(
-                messages=messages,
-                model=model,
-                system=system,
-                temperature=temperature,
-                max_tokens=max_tokens,
-            )
-            usage = AIUsage(
-                timestamp=datetime.utcnow(),
-                model=model,
-                feature=feature,
-                prompt_tokens=response.prompt_tokens,
-                completion_tokens=response.completion_tokens,
-                total_tokens=response.usage_tokens,
-                latency_ms=response.latency_ms,
-                cost=response.cost,
-                success=True,
-            )
-            return response.content, usage
-        except Exception as e:
-            logger.error(f"AI chat failed: {e}")
-            usage = AIUsage(
-                timestamp=datetime.utcnow(),
-                model=model,
-                feature=feature,
-                prompt_tokens=0,
-                completion_tokens=0,
-                total_tokens=0,
-                latency_ms=0,
-                cost=0,
-                success=False,
-                error=str(e),
-            )
-            return f"Error: {str(e)}", usage
+        OpenAI, Anthropic, and custom OpenAI-compatible providers all expose
+        ``generate``; flatten the message history into one prompt so every
+        provider works consistently.
+        """
+        parts: list[str] = []
+        for message in messages:
+            role = (message.get("role") or "user").strip().lower()
+            content = message.get("content") or ""
+            if role == "system":
+                system = f"{system}\n\n{content}".strip() if system else content
+            else:
+                parts.append(content)
+        prompt = "\n\n".join(part for part in parts if part)
+
+        return await self._generate(
+            prompt=prompt,
+            model=model,
+            system=system,
+            temperature=temperature,
+            max_tokens=max_tokens,
+            feature=feature,
+        )
 
     async def analyze_website(self, website_content: str, website_url: str = "") -> tuple[PersonalizationData, AIUsage]:
         prompt = render_prompt(
@@ -192,8 +195,7 @@ class AIEngine:
             website_content=website_content[:4000],
         )
 
-        model_config = self.provider.get_model_config("llama3.2") or {}
-        model = "llama3.2"
+        model = settings.ai_default_model
         system = get_prompt("personalization_analyze")["prompt"].split("\n\nWebsite Content")[0]
 
         content, usage = await self._generate(
@@ -285,7 +287,7 @@ class AIEngine:
 
         total_usage = AIUsage(
             timestamp=datetime.utcnow(),
-            model="llama3.2",
+            model=settings.ai_default_model,
             feature="full_personalization",
             prompt_tokens=opener_usage.prompt_tokens + email_usage.prompt_tokens,
             completion_tokens=opener_usage.completion_tokens + email_usage.completion_tokens,
@@ -427,8 +429,7 @@ class AIEngine:
             email_body=email_body,
         )
 
-        model_config = self.provider.get_model_config("llama3.2") or {}
-        model = "llama3.2"
+        model = settings.ai_default_model
 
         messages = [
             {"role": "user", "content": prompt}
@@ -565,7 +566,7 @@ class AIEngine:
         self,
         prompt_text: str,
         system: Optional[str] = None,
-        model: str = "llama3.2",
+        model: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 500,
         feature: str = "custom",

@@ -2,8 +2,9 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional
 import httpx
-import json
 import time
+
+from app.core.config import settings
 
 
 @dataclass
@@ -21,11 +22,11 @@ class AIResponse:
 class AIRequest:
     prompt: str
     system: Optional[str] = None
-    model: str = "llama3.2"
+    model: str = settings.ai_default_model
     temperature: float = 0.7
     max_tokens: int = 500
     stream: bool = False
-    timeout: int = 120
+    timeout: int = settings.ai_timeout
 
 
 class AIProvider(ABC):
@@ -46,99 +47,8 @@ class AIProvider(ABC):
         pass
 
 
-class OllamaProvider(AIProvider):
-    name = "ollama"
-    BASE_URL = "http://localhost:11434"
-
-    def __init__(self, base_url: str = "http://localhost:11434"):
-        self.base_url = base_url
-
-    async def generate(self, request: AIRequest) -> AIResponse:
-        start = time.perf_counter()
-
-        async with httpx.AsyncClient(timeout=request.timeout) as client:
-            payload = {
-                "model": request.model,
-                "prompt": request.prompt,
-                "stream": False,
-                "options": {
-                    "temperature": request.temperature,
-                    "num_predict": request.max_tokens,
-                },
-            }
-            if request.system:
-                payload["system"] = request.system
-
-            response = await client.post(f"{self.base_url}/api/generate", json=payload)
-            response.raise_for_status()
-            data = response.json()
-
-        latency = (time.perf_counter() - start) * 1000
-        content = data.get("response", "")
-        tokens = data.get("context", [])
-        token_count = len(tokens) if isinstance(tokens, list) else 0
-
-        return AIResponse(
-            content=content,
-            model=request.model,
-            usage_tokens=token_count,
-            prompt_tokens=int(token_count * 0.5),
-            completion_tokens=int(token_count * 0.5),
-            latency_ms=latency,
-            cost=0.0,
-        )
-
-    async def chat(self, messages: list[dict], model: str = "llama3.2", system: Optional[str] = None, temperature: float = 0.7, max_tokens: int = 500) -> AIResponse:
-        start = time.perf_counter()
-
-        async with httpx.AsyncClient(timeout=120) as client:
-            formatted_messages = []
-            if system:
-                formatted_messages.append({"role": "system", "content": system})
-            formatted_messages.extend(messages)
-
-            payload = {
-                "model": model,
-                "messages": formatted_messages,
-                "stream": False,
-                "options": {
-                    "temperature": temperature,
-                    "num_predict": max_tokens,
-                },
-            }
-
-            response = await client.post(f"{self.base_url}/api/chat", json=payload)
-            response.raise_for_status()
-            data = response.json()
-
-        latency = (time.perf_counter() - start) * 1000
-        content = data.get("message", {}).get("content", "")
-        usage = data.get("usage", {})
-        prompt_tokens = usage.get("prompt_eval_count", 0)
-        completion_tokens = usage.get("eval_count", 0)
-        total_tokens = prompt_tokens + completion_tokens
-
-        return AIResponse(
-            content=content,
-            model=model,
-            usage_tokens=total_tokens,
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            latency_ms=latency,
-            cost=0.0,
-        )
-
-    async def health_check(self) -> bool:
-        try:
-            async with httpx.AsyncClient(timeout=5) as client:
-                response = await client.get(f"{self.base_url}/api/tags")
-                return response.status_code == 200
-        except Exception:
-            return False
-
-    @property
-    def estimated_cost_per_1k_tokens(self) -> float:
-        return 0.0
+def _clean_base_url(base_url: Optional[str], default: str) -> str:
+    return (base_url or default).strip().rstrip("/")
 
 
 class OpenAIProvider(AIProvider):
@@ -146,7 +56,7 @@ class OpenAIProvider(AIProvider):
 
     def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1"):
         self.api_key = api_key
-        self.base_url = base_url
+        self.base_url = _clean_base_url(base_url, "https://api.openai.com/v1")
 
     async def generate(self, request: AIRequest) -> AIResponse:
         start = time.perf_counter()
@@ -202,9 +112,9 @@ class AnthropicProvider(AIProvider):
     name = "anthropic"
     SUPPORTS_STRUCTURED = True
 
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, base_url: str = "https://api.anthropic.com/v1"):
         self.api_key = api_key
-        self.base_url = "https://api.anthropic.com/v1"
+        self.base_url = _clean_base_url(base_url, "https://api.anthropic.com/v1")
 
     async def generate(self, request: AIRequest) -> AIResponse:
         start = time.perf_counter()
@@ -241,8 +151,11 @@ class AnthropicProvider(AIProvider):
 
     async def health_check(self) -> bool:
         try:
-            async with httpx.AsyncClient(timeout=5, headers={"x-api-key": self.api_key, "anthropic-version": "2023-06-01"}) as client:
-                response = await client.get(f"{self.base_url}/messages", json={"max_tokens": 1, "messages": [{"role": "user", "content": "test"}]})
+            async with httpx.AsyncClient(
+                timeout=8,
+                headers={"x-api-key": self.api_key, "anthropic-version": "2023-06-01"},
+            ) as client:
+                response = await client.get(f"{self.base_url}/models")
                 return response.status_code == 200
         except Exception:
             return False
@@ -292,22 +205,6 @@ def get_provider_manager() -> AIProviderManager:
 
 
 def configure_providers(config: dict):
-    if config.get("ollama", {}).get("enabled"):
-        ollama_url = config["ollama"].get("url", "http://localhost:11434")
-        ollama_provider = OllamaProvider(base_url=ollama_url)
-        _provider_manager.register("ollama", ollama_provider)
-
-        if config["ollama"].get("default", False):
-            _provider_manager.set_active("ollama")
-
-        for model_name, model_config in config["ollama"].get("models", {}).items():
-            _provider_manager._models[model_name] = {
-                "provider": "ollama",
-                "temperature": model_config.get("temperature", 0.7),
-                "max_tokens": model_config.get("max_tokens", 500),
-                "enabled": model_config.get("enabled", True),
-            }
-
     if config.get("openai", {}).get("api_key"):
         openai_provider = OpenAIProvider(
             api_key=config["openai"]["api_key"],
@@ -328,7 +225,10 @@ def configure_providers(config: dict):
             }
 
     if config.get("anthropic", {}).get("api_key"):
-        anthropic_provider = AnthropicProvider(api_key=config["anthropic"]["api_key"])
+        anthropic_provider = AnthropicProvider(
+            api_key=config["anthropic"]["api_key"],
+            base_url=config["anthropic"].get("base_url", "https://api.anthropic.com/v1"),
+        )
         _provider_manager.register("anthropic", anthropic_provider)
 
         if config["anthropic"].get("default"):

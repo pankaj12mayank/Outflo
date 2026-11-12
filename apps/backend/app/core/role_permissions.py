@@ -40,6 +40,9 @@ ORGANIZATION_ADMIN_PERMISSIONS = [
     "settings:update",
     "notifications:read",
     "monitoring:read",
+    "ai:read",
+    "ai:write",
+    "ai:manage",
 ]
 
 TEAM_MEMBER_PERMISSIONS = [
@@ -51,6 +54,8 @@ TEAM_MEMBER_PERMISSIONS = [
     "sequences:read",
     "scraping:read",
     "settings:read",
+    "ai:read",
+    "ai:write",
 ]
 
 # Platform-only (system_owner console); not granted to organization_admin.

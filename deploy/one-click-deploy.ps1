@@ -28,7 +28,7 @@ Write-Host "[1/6] Generated production secrets" -ForegroundColor Green
 $mongoUrl = Read-Host "MongoDB Atlas URI (mongodb+srv://...)"
 if (-not $mongoUrl) { Write-Host "MongoDB URL required. Get free cluster at https://cloud.mongodb.com" -ForegroundColor Red; exit 1 }
 
-$aiProvider = Read-Host "AI provider [openai/anthropic/ollama] (default: openai)"
+$aiProvider = Read-Host "AI provider [openai/anthropic] (default: openai)"
 if (-not $aiProvider) { $aiProvider = "openai" }
 
 $openaiKey = ""

@@ -53,8 +53,8 @@ Outflo is a production-grade AI Outreach Automation SaaS platform built with a s
              ▼                   ▼                   ▼
 ┌───────────────────┐ ┌───────────────────┐ ┌───────────────────┐
 │   AI Provider     │ │   Web Scraper     │ │   Email Service   │
-│   Ollama (Local)   │ │   httpx/BS4       │ │   SMTP            │
-│   GPT-4/Claude     │ │   Rotating UA     │ │   Gmail/SMTP      │
+│   OpenAI/Claude    │ │   httpx/BS4       │ │   SMTP            │
+│   Custom (OpenAI)  │ │   Rotating UA     │ │   Gmail/SMTP      │
 └───────────────────┘ └───────────────────┘ └───────────────────┘
 ```
 
@@ -81,8 +81,8 @@ Outflo is a production-grade AI Outreach Automation SaaS platform built with a s
 - **HTTP Client**: httpx (async)
 
 ### AI Stack
-- **Provider**: Ollama (local) or OpenAI/Claude (cloud)
-- **Model**: llama3.2 (default), GPT-4, Claude 3.5
+- **Provider**: OpenAI, Anthropic, or any OpenAI-compatible custom endpoint
+- **Model**: Configurable per provider (GPT-4o mini by default)
 - **Abstraction**: Provider-based for easy switching
 
 ### Scraping Stack
@@ -184,7 +184,7 @@ outflo/
 │   ├── ai-providers/              # AI Provider Abstraction
 │   │   └── src/
 │   │       ├── base.py            # Abstract provider
-│   │       ├── ollama_provider.py # Ollama implementation
+│   │       ├── openai_provider.py # OpenAI-compatible implementation
 │   │       └── manager.py         # Provider manager
 │   ├── scraping/                   # Web Scraping Utilities
 │   │   └── src/
@@ -359,29 +359,41 @@ class AIProvider(ABC):
     async def health_check(self) -> bool
 ```
 
-### Ollama Implementation
+### OpenAI-Compatible Implementation
 
 ```python
-class OllamaProvider(AIProvider):
-    def __init__(self, config: AIProviderConfig):
-        self.client = ollama.Client(host=config.base_url)
+class OpenAIProvider(AIProvider):
+    def __init__(self, api_key: str, base_url: str = "https://api.openai.com/v1"):
+        self.api_key = api_key
+        self.base_url = base_url.rstrip("/")
 
-    async def complete(self, request: AICompletionRequest) -> AICompletionResponse:
-        response = self.client.generate(
-            model=request.model or self.default_model,
-            prompt=request.prompt,
-            system=request.system,
-            options={"temperature": request.temperature}
-        )
-        return AICompletionResponse(text=response["response"])
+    async def generate(self, request: AIRequest) -> AIResponse:
+        async with httpx.AsyncClient(
+            timeout=request.timeout,
+            headers={"Authorization": f"Bearer {self.api_key}"},
+        ) as client:
+            response = await client.post(
+                f"{self.base_url}/chat/completions",
+                json={
+                    "model": request.model,
+                    "messages": [{"role": "user", "content": request.prompt}],
+                    "temperature": request.temperature,
+                    "max_tokens": request.max_tokens,
+                },
+            )
+            data = response.json()
+        return AIResponse(content=data["choices"][0]["message"]["content"])
 ```
 
-### Future Providers
+Custom providers reuse this implementation by pointing `base_url` at any
+OpenAI-compatible endpoint.
 
-To add OpenAI or Anthropic:
-1. Implement `AIProvider` interface
-2. Register in `AIManager`
-3. Configure via environment variables
+### Adding Providers
+
+To add a new provider protocol:
+1. Implement the `AIProvider` interface
+2. Register it in `AIProviderManager`
+3. Add it to `ALLOWED_PROVIDER_TYPES` in the AI API
 
 ## Naming Conventions
 
@@ -426,8 +438,9 @@ SECRET_KEY=your-secret-key-here
 DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/outflo
 
 # AI
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_DEFAULT_MODEL=llama3.2
+AI_PROVIDER=openai
+AI_DEFAULT_MODEL=gpt-4o-mini
+OPENAI_API_KEY=sk-...
 
 # Scraping
 SCRAPE_DELAY_MS=2000
@@ -460,9 +473,6 @@ uvicorn app.main:app --reload
 # Terminal 2: Frontend
 cd apps/frontend
 npm run dev
-
-# Terminal 3: Ollama
-ollama serve
 ```
 
 ### Production (VPS)

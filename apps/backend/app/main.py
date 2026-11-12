@@ -13,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from .core.config import settings
 import os
 os.environ.setdefault("SYSTEM_OWNER_EMAIL", settings.system_owner_email or "admin@outflo.com")
-os.environ.setdefault("SYSTEM_OWNER_PASSWORD", settings.system_owner_password or "Outflo@2024!")
+os.environ.setdefault("SYSTEM_OWNER_PASSWORD", settings.system_owner_password or "Admin@123")
 os.environ.setdefault("SYSTEM_OWNER_JWT_SECRET", settings.system_owner_jwt_secret or "so-jwt-secret-dev")
 from .core.logging import app_logger
 from .core.exceptions import (

@@ -463,7 +463,7 @@ class HealthResponse(BaseModel):
 
 
 class AICompletionRequest(BaseModel):
-    model: str = "llama3.2"
+    model: Optional[str] = None
     prompt: str
     system: Optional[str] = None
     temperature: float = 0.7

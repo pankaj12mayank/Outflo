@@ -1588,8 +1588,8 @@ CREATE TABLE ai_templates (
     config              JSONB NOT NULL DEFAULT '{}',
 
     -- Model settings
-    provider            VARCHAR(100) DEFAULT 'ollama',
-    model               VARCHAR(100) DEFAULT 'llama3.2',
+    provider            VARCHAR(100) DEFAULT 'openai',
+    model               VARCHAR(100) DEFAULT 'gpt-4o-mini',
     temperature         DECIMAL(3, 2) DEFAULT 0.7,
     max_tokens          INTEGER DEFAULT 500,
 

@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import Optional, List, Dict, Any
 
+from app.core.config import settings
+
 
 class PromptCategory(str, Enum):
     SYSTEM = "system"
@@ -37,7 +39,7 @@ _DEFAULT_PROMPTS: dict[str, dict] = {
 - Free of spam trigger words
 
 Always include a clear call-to-action and sign-off.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.7,
         "max_tokens": 300,
         "version": 1,
@@ -62,7 +64,7 @@ Extract and return a JSON object with:
 - personalization_angles: Specific angles for personalization (recent achievements, mutual connections, specific pain points, relevant content)
 
 Return ONLY valid JSON, no markdown formatting.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.3,
         "max_tokens": 500,
         "version": 1,
@@ -82,7 +84,7 @@ Identify 3-5 specific pain points this company likely faces. For each pain point
 - Suggest how our solution addresses it
 
 Format as a bulleted list.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.5,
         "max_tokens": 400,
         "version": 1,
@@ -106,7 +108,7 @@ Write a single opening line (max 40 words) that:
 - Does NOT use generic openers like "I noticed your company"
 
 Return ONLY the opening line, no explanation.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.8,
         "max_tokens": 100,
         "version": 1,
@@ -136,7 +138,7 @@ Requirements:
 - Professional but human tone
 
 Return the complete email body.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.7,
         "max_tokens": 400,
         "version": 1,
@@ -160,7 +162,7 @@ Requirements:
 - Vary the approach (question, statement, curiosity, mutual connection)
 
 Return a numbered list of subject lines.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.9,
         "max_tokens": 200,
         "version": 1,
@@ -182,7 +184,7 @@ Requirements:
 - Varied complexity (simple click vs meeting request)
 
 Return a numbered list of CTA options, each max 15 words.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.8,
         "max_tokens": 200,
         "version": 1,
@@ -205,7 +207,7 @@ Requirements:
 - Max 25 words each
 
 Return a numbered list of opening lines.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.85,
         "max_tokens": 300,
         "version": 1,
@@ -227,7 +229,7 @@ Make these improvements:
 - Keep the core message intact
 
 Return the improved email with changes noted.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.5,
         "max_tokens": 400,
         "version": 1,
@@ -248,7 +250,7 @@ Provide:
 5. Rewritten version with improvements applied
 
 Be specific and actionable in feedback.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.6,
         "max_tokens": 500,
         "version": 1,
@@ -277,7 +279,7 @@ Body: {body}
 
 Return ONLY a JSON object:
 {{"category": "category_name", "confidence": 0.95, "reasoning": "brief explanation", "sentiment": "positive/negative/neutral", "action_required": "specific action if any"}}""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.3,
         "max_tokens": 200,
         "version": 1,
@@ -302,7 +304,7 @@ Analyze:
 6. Red flags (recent layoffs, negative news)
 
 Be thorough but concise. Return structured analysis.""",
-        "model": "llama3.2",
+        "model": settings.ai_default_model,
         "temperature": 0.4,
         "max_tokens": 600,
         "version": 1,

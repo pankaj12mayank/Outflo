@@ -48,16 +48,15 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000"]
     cors_credentials: bool = True
 
-    # AI — set AI_PROVIDER=openai|anthropic|ollama (paid API recommended for cloud deploy)
-    ai_provider: str = "ollama"
-    ai_default_model: str = "llama3.2"
+    # AI — set AI_PROVIDER=openai|anthropic (custom OpenAI-compatible providers are DB-configured)
+    ai_provider: str = "openai"
+    ai_default_model: str = "gpt-4o-mini"
+    ai_timeout: int = 120
+    ai_max_retries: int = 3
     openai_api_key: str = ""
     openai_base_url: str = "https://api.openai.com/v1"
     anthropic_api_key: str = ""
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_default_model: str = "llama3.2"
-    ollama_timeout: int = 120
-    ollama_max_retries: int = 3
+    anthropic_base_url: str = "https://api.anthropic.com/v1"
 
     playwright_browsers_path: str = "./browsers"
     playwright_headless: bool = True

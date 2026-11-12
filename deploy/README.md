@@ -18,7 +18,7 @@ Then paste env into [Render](https://render.com) and [Vercel](https://vercel.com
 
 **Docker not required.**
 
-## Paid AI (no Ollama on cloud)
+## AI providers
 
 On Render, set:
 
@@ -34,6 +34,6 @@ AI_DEFAULT_MODEL=gpt-4o-mini
 | Azure OpenAI | Same + `OPENAI_BASE_URL=https://RESOURCE.openai.azure.com/openai/deployments/DEPLOYMENT` |
 | Anthropic | `AI_PROVIDER=anthropic` + `ANTHROPIC_API_KEY` |
 | Groq / Together | `openai` + their OpenAI-compatible base URL |
-| Local Ollama | `AI_PROVIDER=ollama` (local dev only) |
+| Custom OpenAI-compatible | Add it in the app under **AI Providers** |
 
 See `env.production.template` for all variables.

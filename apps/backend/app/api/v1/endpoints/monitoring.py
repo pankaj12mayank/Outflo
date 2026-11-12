@@ -33,13 +33,9 @@ async def check_system_health():
     mongodb_health = await MonitoringService.check_mongodb_health()
     await MonitoringService.save_health_status(mongodb_health)
     
-    ollama_health = await MonitoringService.check_ollama_health()
-    await MonitoringService.save_health_status(ollama_health)
-    
     return {
         "backend": backend_health,
         "mongodb": mongodb_health,
-        "ollama": ollama_health
     }
 
 

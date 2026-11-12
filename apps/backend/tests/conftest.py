@@ -9,7 +9,6 @@ os.environ.update({
     "SECRET_KEY": "test-secret-key-for-testing-only",
     "DATABASE_URL": "postgresql+asyncpg://postgres:password@localhost:5432/outflo_test",
     "DEBUG": "true",
-    "OLLAMA_BASE_URL": "http://localhost:11434",
 })
 
 
@@ -224,34 +223,6 @@ def sample_ai_request():
 @pytest.fixture
 def sample_csv_content():
     return b"email,first_name,last_name,company\nuser@example.com,Test,User,TestCo\n"
-
-
-@pytest.fixture
-def mock_ollama(monkeypatch):
-    async def mock_generate(self, request):
-        class MockResponse:
-            content = "Mock AI response"
-            prompt_tokens = 10
-            completion_tokens = 20
-            usage_tokens = 30
-            latency_ms = 500
-            cost = 0.0
-            success = True
-        return MockResponse()
-
-    async def mock_chat(self, messages, model, system, temperature, max_tokens):
-        class MockChatResponse:
-            content = "Mock chat response"
-            prompt_tokens = 5
-            completion_tokens = 10
-            usage_tokens = 15
-            latency_ms = 300
-            cost = 0.0
-        return MockChatResponse()
-
-    from app.services.ai.providers import OllamaProvider
-    monkeypatch.setattr(OllamaProvider, "generate", mock_generate)
-    monkeypatch.setattr(OllamaProvider, "chat", mock_chat)
 
 
 @pytest.fixture(autouse=True)

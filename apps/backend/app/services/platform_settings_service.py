@@ -26,8 +26,6 @@ class PlatformSettingsService:
             "ai_provider",
             "openai_api_key",
             "anthropic_api_key",
-            "ollama_base_url",
-            "ollama_model",
         }
         ai_patch = {k: v for k, v in data.items() if k in allowed}
 
@@ -67,9 +65,7 @@ class PlatformSettingsService:
         settings = await PlatformSettingsService.get_settings()
         ai = settings.get("ai") or settings
         return {
-            "ai_provider": ai.get("ai_provider") or os.getenv("AI_PROVIDER", "ollama"),
+            "ai_provider": ai.get("ai_provider") or os.getenv("AI_PROVIDER", "openai"),
             "openai_api_key": ai.get("openai_api_key") or os.getenv("OPENAI_API_KEY"),
             "anthropic_api_key": ai.get("anthropic_api_key") or os.getenv("ANTHROPIC_API_KEY"),
-            "ollama_base_url": ai.get("ollama_base_url") or os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-            "ollama_model": ai.get("ollama_model") or os.getenv("OLLAMA_MODEL", "llama3.2"),
         }

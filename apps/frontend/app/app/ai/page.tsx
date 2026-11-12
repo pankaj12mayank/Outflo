@@ -39,14 +39,7 @@ import { Button } from "@/app/components/ui/button";
 import { Badge } from "@/app/components/ui/badge";
 import { Card } from "@/app/components/ui/card";
 
-const ollamaModels = [
-  { name: "llama3.2", display: "Llama 3.2", size: "2GB", description: "Fast, efficient for most tasks" },
-  { name: "llama3.2:3b", display: "Llama 3.2 3B", size: "2GB", description: "Balanced performance" },
-  { name: "llama3.1", display: "Llama 3.1", size: "4GB", description: "Higher quality generations" },
-  { name: "mixtral", display: "Mixtral 8x7B", size: "26GB", description: "Excellent for complex tasks" },
-  { name: "mistral", display: "Mistral 7B", size: "4GB", description: "Fast and capable" },
-  { name: "phi3", display: "Phi-3", size: "2GB", description: "Small but powerful" },
-];
+type AvailableModel = { name: string; provider?: string };
 
 const defaultPrompts = [
   {
@@ -210,8 +203,13 @@ function UsageChart({ data }: { data: any }) {
 export default function AISettingsPage() {
   const [tab, setTab] = useState<string>("models");
   const [loading, setLoading] = useState(false);
-  const [selectedModel, setSelectedModel] = useState<string>("llama3.2");
-  const [ollamaConnected, setOllamaConnected] = useState<boolean>(false);
+  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [availableModels, setAvailableModels] = useState<AvailableModel[]>([]);
+  const [providerInfo, setProviderInfo] = useState<{ provider: string; model: string }>({
+    provider: "",
+    model: "",
+  });
+  const [providerConnected, setProviderConnected] = useState<boolean>(false);
   const [isTesting, setIsTesting] = useState<boolean>(false);
   const [testResult, setTestResult] = useState<{success: boolean; message: string} | null>(null);
   const [temperature, setTemperature] = useState<number>(0.7);
@@ -234,8 +232,27 @@ export default function AISettingsPage() {
   useEffect(() => {
     fetchAIStats();
     loadAISettings();
+    loadModels();
     loadPromptsFromApi();
   }, []);
+
+  const loadModels = async () => {
+    try {
+      const res = await aiAPI.getModels();
+      const data = res.data;
+      const models: AvailableModel[] = Array.isArray(data.models) ? data.models : [];
+      setAvailableModels(models);
+      setProviderInfo({
+        provider: data.provider || "",
+        model: data.selected_model || "",
+      });
+      if (data.selected_model) {
+        setSelectedModel((current) => current || data.selected_model);
+      }
+    } catch {
+      /* provider may not be configured yet */
+    }
+  };
 
   const loadAISettings = async () => {
     try {
@@ -293,22 +310,26 @@ export default function AISettingsPage() {
     try {
       const response = await aiAPI.getStatus();
       const data = response.data;
-      
-      if (data.status === "available" || data.status === "offline") {
-        setOllamaConnected(data.status === "available");
-        setTestResult({
-          success: data.status === "available",
-          message: data.status === "available" 
-            ? "Connected to Ollama successfully!" 
-            : "Ollama not running. Start Ollama to enable AI features."
-        });
-      } else {
-        setOllamaConnected(false);
-        setTestResult({ success: false, message: "Connection failed" });
-      }
+      const ok = data.status === "available" || data.healthy === true;
+      setProviderConnected(ok);
+      setProviderInfo({
+        provider: data.provider || "",
+        model: data.model || "",
+      });
+      setTestResult({
+        success: ok,
+        message: ok
+          ? `Connected to ${data.provider}${data.model ? ` (${data.model})` : ""}.`
+          : data.message ||
+            "AI provider is offline. Check the provider configuration under AI Providers.",
+      });
+      if (ok) await loadModels();
     } catch (error) {
-      setOllamaConnected(false);
-      setTestResult({ success: false, message: "Cannot connect to server" });
+      setProviderConnected(false);
+      setTestResult({
+        success: false,
+        message: "Cannot reach the AI provider. Check AI Providers configuration.",
+      });
     }
     
     setIsTesting(false);
@@ -442,11 +463,15 @@ export default function AISettingsPage() {
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold mb-1">Ollama Connection</h3>
+                  <h3 className="text-lg font-bold mb-1">AI Provider Connection</h3>
                   <div className="flex items-center gap-2">
-                    <div className={cn("w-2 h-2 rounded-full", ollamaConnected ? "bg-green-400" : "bg-red-400")} />
+                    <div className={cn("w-2 h-2 rounded-full", providerConnected ? "bg-green-400" : "bg-red-400")} />
                     <span className="text-sm text-gray-400">
-                      {ollamaConnected ? "Connected to localhost:11434" : "Disconnected"}
+                      {providerConnected
+                        ? `Connected to ${providerInfo.provider || "provider"}${providerInfo.model ? ` · ${providerInfo.model}` : ""}`
+                        : providerInfo.provider
+                        ? `Offline · ${providerInfo.provider}`
+                        : "No provider configured"}
                     </span>
                   </div>
                   {testResult && (
@@ -469,16 +494,33 @@ export default function AISettingsPage() {
 
               <div>
                 <h3 className="text-lg font-bold mb-4">Available Models</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {ollamaModels.map((model) => (
-                    <ModelCard
-                      key={model.name}
-                      model={model}
-                      isSelected={selectedModel === model.name}
-                      onClick={() => setSelectedModel(model.name)}
-                    />
-                  ))}
-                </div>
+                {availableModels.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {availableModels.map((model) => (
+                      <ModelCard
+                        key={model.name}
+                        model={{
+                          display: model.name,
+                          size: model.provider || providerInfo.provider || "provider",
+                          description:
+                            selectedModel === model.name
+                              ? "Currently selected model"
+                              : "Available from your active provider",
+                        }}
+                        isSelected={selectedModel === model.name}
+                        onClick={() => setSelectedModel(model.name)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-5 rounded-xl border border-white/5 bg-white/5 text-sm text-gray-400">
+                    No models found. Add or configure a provider under{" "}
+                    <a href="/app/ai-providers" className="text-purple-400 hover:underline">
+                      AI Providers
+                    </a>
+                    , then fetch its models and return here.
+                  </div>
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -622,7 +664,7 @@ export default function AISettingsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Provider</span>
-                      <span className="font-bold">Ollama (Local)</span>
+                      <span className="font-bold">{providerInfo.provider || "Not configured"}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-400">Avg Cost/1K tokens</span>
@@ -648,11 +690,11 @@ export default function AISettingsPage() {
                     </thead>
                     <tbody>
                       {[
-                        { time: "2 min ago", feature: "personalization", model: "llama3.2", tokens: 456, latency: "1.2s", status: "success" },
-                        { time: "5 min ago", feature: "subject_generation", model: "llama3.2", tokens: 89, latency: "0.8s", status: "success" },
-                        { time: "12 min ago", feature: "reply_classification", model: "llama3.2", tokens: 234, latency: "1.1s", status: "success" },
-                        { time: "25 min ago", feature: "opener_generation", model: "llama3.2", tokens: 178, latency: "0.9s", status: "success" },
-                        { time: "1 hour ago", feature: "personalization", model: "llama3.2", tokens: 512, latency: "1.4s", status: "failed" },
+                        { time: "2 min ago", feature: "personalization", model: "gpt-4o-mini", tokens: 456, latency: "1.2s", status: "success" },
+                        { time: "5 min ago", feature: "subject_generation", model: "gpt-4o-mini", tokens: 89, latency: "0.8s", status: "success" },
+                        { time: "12 min ago", feature: "reply_classification", model: "gpt-4o-mini", tokens: 234, latency: "1.1s", status: "success" },
+                        { time: "25 min ago", feature: "opener_generation", model: "gpt-4o-mini", tokens: 178, latency: "0.9s", status: "success" },
+                        { time: "1 hour ago", feature: "personalization", model: "gpt-4o-mini", tokens: 512, latency: "1.4s", status: "failed" },
                       ].map((row, i) => (
                         <tr key={i} className="border-b border-white/5 hover:bg-white/5">
                           <td className="p-3 text-sm">{row.time}</td>

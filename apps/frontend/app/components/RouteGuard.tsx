@@ -26,6 +26,8 @@ export const crmRoutePermissions: Record<string, RouteGuardConfig> = {
   "/app/campaigns": { requiredPermissions: ["campaigns:read"] },
   "/app/leads": { requiredPermissions: ["leads:read"] },
   "/app/scraping": { requiredPermissions: ["scraping:read"] },
+  "/app/ai": { requiredPermissions: ["ai:read", "ai:write"] },
+  "/app/ai-providers": { requiredPermissions: ["ai:manage"] },
 };
 
 const routePermissions = crmRoutePermissions;

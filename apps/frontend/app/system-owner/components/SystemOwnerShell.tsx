@@ -53,6 +53,7 @@ const NAV: NavItem[] = [
       { href: "/system-owner/email/triggers", label: "Triggers", icon: Radio },
     ],
   },
+  { href: "/system-owner/ai-providers", label: "AI Providers", icon: Cpu },
   { href: "/system-owner/settings", label: "AI & API", icon: Cpu },
   { href: "/system-owner/organizations", label: "Organizations", icon: Building2 },
 ];

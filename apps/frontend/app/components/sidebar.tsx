@@ -48,7 +48,7 @@ const navigationCommon = [
   { name: "Scraping", href: "/app/scraping", icon: Search, permissions: ["scraping:read"] },
   { name: "Campaigns", href: "/app/campaigns", icon: Target, permissions: ["campaigns:read"] },
   { name: "Sequences", href: "/app/sequences", icon: Mail, permissions: ["sequences:read"] },
-  { name: "AI Studio", href: "/app/ai", icon: Bot, permissions: [] },
+  { name: "AI Studio", href: "/app/ai", icon: Bot, permissions: ["ai:read"] },
   { name: "Automation", href: "/app/automation", icon: Workflow, permissions: [] },
   { name: "Inbox", href: "/app/inbox", icon: MessageSquare, permissions: [] },
   { name: "Calendar", href: "/app/calendar", icon: Calendar, permissions: [] },
@@ -63,13 +63,14 @@ const systemOwnerNav = [
   { name: "Billing", href: "/system-owner/payments", icon: CreditCard, permissions: ["billing:read"] },
   { name: "Email", href: "/system-owner/email", icon: Mail, permissions: ["cms:read"] },
   { name: "Notifications", href: "/system-owner/notifications", icon: Bell, permissions: ["notifications:read"] },
-  { name: "AI Providers", href: "/app/ai-providers", icon: Cpu, permissions: [] },
+  { name: "AI Providers", href: "/system-owner/ai-providers", icon: Cpu, permissions: ["ai:manage"] },
   { name: "Settings", href: "/system-owner/settings", icon: Settings, permissions: ["settings:read"] },
   { name: "Dashboard", href: "/system-owner/dashboard", icon: BarChart3, permissions: ["analytics:read"] },
 ];
 
 const settingsNavCommon = [
   { name: "Settings", href: "/app/settings", icon: Settings, permissions: [] },
+  { name: "AI Providers", href: "/app/ai-providers", icon: Cpu, permissions: ["ai:manage"] },
   { name: "Billing", href: "/app/billing", icon: CreditCard, permissions: ["billing:read"] },
   { name: "Team", href: "/app/team", icon: Shield, permissions: ["teams:read"] },
 ];

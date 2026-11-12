@@ -346,6 +346,7 @@ export const aiAPI = {
   analyzeReply: (data: { email_id?: string; sender: string; subject: string; body: string }) =>
     api.post("/api/v1/ai/analyze-reply", data),
   getStatus: () => api.get("/api/v1/ai/status"),
+  getModels: () => api.get("/api/v1/ai/models"),
   listPrompts: (params?: { category?: string }) =>
     api.get("/api/v1/ai/prompts", { params }),
   createPrompt: (data: any) =>
@@ -369,6 +370,12 @@ export const aiAPI = {
   updateProvider: (id: string, data: any) => api.patch(`/api/v1/ai/providers/${id}`, data),
   deleteProvider: (id: string) => api.delete(`/api/v1/ai/providers/${id}`),
   testProvider: (data: any) => api.post("/api/v1/ai/providers/test", data),
+  fetchModels: (data: {
+    provider_id?: string;
+    provider_type?: string;
+    base_url?: string;
+    api_key?: string;
+  }) => api.post("/api/v1/ai/providers/fetch-models", data),
   fetchProviderModels: (id: string) => api.post(`/api/v1/ai/providers/${id}/models`),
 };
 

@@ -34,7 +34,7 @@ A production-ready, enterprise-grade SaaS platform for AI-powered outreach autom
 - Python 3.9+
 - Node.js 18+
 - MongoDB (local or cloud)
-- Ollama (optional, for local AI)
+- An AI provider API key (OpenAI, Anthropic, or any OpenAI-compatible endpoint)
 
 ## ⚡ Quick Start
 
@@ -63,14 +63,36 @@ npm run dev
 
 ## 🔐 Login Credentials
 
-### System Owner (Platform Admin)
-- URL: http://localhost:3000/system-owner/login
-- Email: admin@outflo.com
-- Password: Admin@123
+These seeded accounts are available in a fresh local database. Change the
+passwords before deploying to production.
 
-### Organization (Customer)
-- URL: http://localhost:3000/login
-- Register new organization
+| Role | Email | Password | Login URL |
+|------|-------|----------|-----------|
+| System Owner (platform admin) | `admin@outflo.com` | `Admin@123` | http://localhost:3000/login |
+| Organization Admin (Test Org) | `orgadmin@test.com` | `Test@1234` | http://localhost:3000/login |
+| Organization Admin (Test Company) | `testorg@demo.com` | `Test@1234` | http://localhost:3000/login |
+
+**Team Member:** no team-member account is seeded. Sign in as an organization
+admin, open **Team**, and invite/create a member to test that role.
+
+### Role access
+
+| Area | System Owner | Org Admin | Team Member |
+|------|--------------|-----------|-------------|
+| System Owner panel (`/system-owner/*`) | ✅ | ❌ | ❌ |
+| Platform-wide AI providers (no organization) | ✅ | ❌ | ❌ |
+| Organization AI providers (`/app/ai-providers`) | ✅ (all orgs) | ✅ (own org) | Read only |
+| Leads, campaigns, sequences | ✅ | ✅ | Per permissions |
+| Billing, plans, organizations | ✅ | Read own | ❌ |
+
+### AI provider setup
+
+- Organization users: **AI Providers** → `http://localhost:3000/app/ai-providers`
+- System owners: **System Owner → AI Providers** → `http://localhost:3000/system-owner/ai-providers`
+- Add a provider with a name, type (OpenAI / Anthropic / Custom), base URL, and
+  API key, then **Fetch models**, pick a default model, **Test**, and **Save**.
+- Custom providers use the OpenAI-compatible protocol (Groq, Together, Azure
+  OpenAI, OpenRouter, local gateways, etc.).
 
 ## 📁 Project Structure
 
@@ -127,9 +149,10 @@ Once backend is running:
 ## 🧪 Testing
 
 ```bash
-# Backend
+# Backend — use the project virtualenv, not global Python
 cd apps/backend
-pytest
+venv\Scripts\activate
+python -m pytest -q
 
 # Frontend
 cd apps/frontend

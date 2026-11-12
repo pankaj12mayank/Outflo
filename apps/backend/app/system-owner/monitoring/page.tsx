@@ -150,7 +150,6 @@ export default function MonitoringDashboard() {
     backend: 'Backend API',
     frontend: 'Frontend App',
     mongodb: 'MongoDB',
-    ollama: 'Ollama AI',
     redis: 'Redis Cache',
     worker: 'Worker Service',
     scraper: 'Scraper Service',

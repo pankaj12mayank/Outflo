@@ -62,7 +62,7 @@ def main() -> int:
     code, body = req(
         "POST",
         "/system-owner-auth/login",
-        {"email": "admin@outflo.com", "password": "Outflo@2024!"},
+        {"email": "admin@outflo.com", "password": "Admin@123"},
     )
     so_token = None
     if isinstance(body, dict):

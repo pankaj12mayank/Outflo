@@ -89,10 +89,10 @@ async def get_current_user_optional(
     """Optional auth - returns None if no token provided."""
     if not credentials:
         return None
-    
+
     token = credentials.credentials
     payload = verify_token(token)
-    
+
     if payload and payload.get("type") == "access":
         return {
             "sub": payload.get("sub"),

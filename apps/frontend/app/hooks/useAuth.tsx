@@ -37,6 +37,9 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
     "settings:read", "settings:update",
     "notifications:read",
     "monitoring:read",
+    "ai:read",
+    "ai:write",
+    "ai:manage",
   ],
   team_member: [
     "teams:read",
@@ -45,6 +48,8 @@ export const DEFAULT_PERMISSIONS: Record<string, string[]> = {
     "sequences:read",
     "scraping:read",
     "settings:read",
+    "ai:read",
+    "ai:write",
   ],
 };
 

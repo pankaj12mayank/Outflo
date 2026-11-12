@@ -247,41 +247,6 @@ class MonitoringService:
             }
 
     @staticmethod
-    async def check_ollama_health() -> Dict:
-        try:
-            import requests
-            start = time.time()
-            response = requests.get("http://localhost:11434/api/tags", timeout=5)
-            latency = (time.time() - start) * 1000
-            
-            if response.status_code == 200:
-                models = response.json().get("models", [])
-                return {
-                    "component": SystemComponent.OLLAMA,
-                    "status": HealthStatus.HEALTHY,
-                    "is_online": True,
-                    "response_time_ms": int(latency),
-                    "metadata": {"models_count": len(models)},
-                    "last_check": datetime.utcnow()
-                }
-            else:
-                return {
-                    "component": SystemComponent.OLLAMA,
-                    "status": HealthStatus.DEGRADED,
-                    "is_online": True,
-                    "last_error": f"Status: {response.status_code}",
-                    "last_check": datetime.utcnow()
-                }
-        except Exception as e:
-            return {
-                "component": SystemComponent.OLLAMA,
-                "status": HealthStatus.OFFLINE,
-                "is_online": False,
-                "last_error": str(e),
-                "last_check": datetime.utcnow()
-            }
-
-    @staticmethod
     async def save_health_status(health_data: Dict) -> Dict:
         existing = await MongoDB.get_collection("system_health").find_one({"component": health_data["component"]})
         

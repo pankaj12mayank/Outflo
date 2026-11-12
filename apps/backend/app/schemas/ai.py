@@ -95,7 +95,7 @@ class PromptCreateRequest(BaseModel):
     category: str
     type: str
     prompt: str
-    model: Optional[str] = "llama3.2"
+    model: Optional[str] = None
     temperature: Optional[float] = 0.7
     max_tokens: Optional[int] = 500
     variables: Optional[list[str]] = Field(default_factory=list)
@@ -200,10 +200,3 @@ class AIUsageResponse(BaseModel):
     records: list[dict]
     total: int
     stats: AIUsageStats
-
-
-class OllamaStatus(BaseModel):
-    connected: bool
-    version: Optional[str] = None
-    models: list[dict] = Field(default_factory=list)
-    default_model: Optional[str] = None
