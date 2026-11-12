@@ -362,6 +362,14 @@ export const aiAPI = {
     api.get("/api/v1/ai/usage", { params }),
   analyzeWebsite: (data: { website_url: string; content?: string }) =>
     api.post("/api/v1/ai/website/analyze", data),
+
+  // AI Providers
+  listProviders: () => api.get("/api/v1/ai/providers"),
+  createProvider: (data: any) => api.post("/api/v1/ai/providers", data),
+  updateProvider: (id: string, data: any) => api.patch(`/api/v1/ai/providers/${id}`, data),
+  deleteProvider: (id: string) => api.delete(`/api/v1/ai/providers/${id}`),
+  testProvider: (data: any) => api.post("/api/v1/ai/providers/test", data),
+  fetchProviderModels: (id: string) => api.post(`/api/v1/ai/providers/${id}/models`),
 };
 
 export const scrapingAPI = {
