@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     system_owner_email: str = "admin@outflo.com"
     system_owner_password: str = ""
     system_owner_jwt_secret: str = ""
+    team_member_default_password: str = "Test@1234"
     app_url: str = "http://localhost:3000"
 
     def __init__(self, **kwargs):

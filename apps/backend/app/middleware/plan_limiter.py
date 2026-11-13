@@ -1,15 +1,15 @@
 from typing import Optional, List, Callable
 from functools import wraps
-from fastapi import HTTPException, status, Request, Depends
+from fastapi import HTTPException, status, Depends
+from app.middleware.auth import get_current_user
 from app.services.plan_service import PlanService, UsageService, FeatureFlagService, SubscriptionService
 
 
-async def get_current_user_with_plan(request: Request):
-    from app.middleware import get_current_user
-    
+async def get_current_user_with_plan(
+    user: dict = Depends(get_current_user),
+):
     try:
-        user = await get_current_user(request)
-        
+        user = dict(user)
         org_id = user.get("organization_id")
         if org_id:
             subscription = await SubscriptionService.get_subscription(org_id)
@@ -60,7 +60,7 @@ def check_limit(resource: str):
             current_user = kwargs.get("current_user")
             
             if not current_user:
-                raise HTTPException(status_code=status.HTTP_401_UNAUTHENTICATED, detail="Not authenticated")
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
             
             org_id = current_user.get("organization_id")
             if not org_id:

@@ -66,9 +66,14 @@ export default function NotificationsPage() {
       emailTemplatesAPI.list(undefined),
       notificationsAPI.listEmailLogs({ limit: 50 }),
     ]);
-    setNotifications(Array.isArray(notifData) ? notifData : notifData?.items || []);
-    setTemplates(Array.isArray(templateData) ? templateData : templateData?.items || []);
-    setEmailLogs(Array.isArray(logData) ? logData : logData?.items || []);
+    const withId = (item: any) => ({
+      ...item,
+      _id: String(item?._id || item?.id || ""),
+    });
+    const toList = (data: any): any[] => (Array.isArray(data) ? data : data?.items || []);
+    setNotifications(toList(notifData).map(withId));
+    setTemplates(toList(templateData).map(withId));
+    setEmailLogs(toList(logData).map(withId));
   }, []);
 
   useEffect(() => {

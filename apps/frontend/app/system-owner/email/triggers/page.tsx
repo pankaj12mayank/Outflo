@@ -91,7 +91,7 @@ export default function EmailTriggersPage() {
   const handleToggle = async (trigger: any) => {
     const newStatus = trigger.status === "active" ? "inactive" : "active";
     try {
-      await api.put(`/api/v1/email-engine/triggers/${trigger._id}`, 
+      await api.put(`/api/v1/email-engine/triggers/${trigger.id || trigger._id}`, 
         { status: newStatus },
         { headers: getAuthHeaders() }
       );
@@ -152,7 +152,7 @@ export default function EmailTriggersPage() {
         <div className="space-y-4">
           {triggers.map((trigger) => (
             <div
-              key={trigger._id}
+              key={trigger.id || trigger._id}
               className="p-5 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all"
             >
               <div className="flex items-center justify-between">
@@ -214,7 +214,7 @@ export default function EmailTriggersPage() {
                   </button>
                   
                   <button 
-                    onClick={() => handleDelete(trigger._id)}
+                    onClick={() => handleDelete(trigger.id || trigger._id)}
                     className="p-2 rounded-lg bg-white/5 hover:bg-red-500/10 text-red-400"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -419,7 +419,7 @@ function EditTriggerModal({ trigger, templates, onClose, onSuccess }: { trigger:
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await api.put(`/api/v1/email-engine/triggers/${trigger._id}`, form, {
+      await api.put(`/api/v1/email-engine/triggers/${trigger.id || trigger._id}`, form, {
         headers: getAuthHeaders()
       });
       toast.success("Trigger updated");
@@ -455,7 +455,7 @@ function EditTriggerModal({ trigger, templates, onClose, onSuccess }: { trigger:
               className="w-full px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white"
             >
               {templates.map(t => (
-                <option key={t._id} value={t._id}>{t.name}</option>
+                <option key={t.id || t._id} value={t.id || t._id}>{t.name}</option>
               ))}
             </select>
           </div>

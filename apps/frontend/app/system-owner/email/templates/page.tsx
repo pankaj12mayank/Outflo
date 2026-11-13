@@ -64,9 +64,9 @@ export default function EmailTemplatesPage() {
     }
   };
 
-  const filteredTemplates = templates.filter(t => 
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.category.toLowerCase().includes(search.toLowerCase())
+  const filteredTemplates = templates.filter(t =>
+    String(t.name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    String(t.category ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -119,7 +119,7 @@ export default function EmailTemplatesPage() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {filteredTemplates.map((template) => (
             <div
-              key={template._id}
+              key={template.id || template._id}
               className="p-5 rounded-2xl border border-white/5 bg-white/5 hover:bg-white/10 transition-all"
             >
               <div className="flex items-start justify-between mb-3">
@@ -156,7 +156,7 @@ export default function EmailTemplatesPage() {
                   Edit
                 </button>
                 <button 
-                  onClick={() => handleDelete(template._id)}
+                  onClick={() => handleDelete(template.id || template._id)}
                   className="p-2 rounded-lg bg-white/5 hover:bg-red-500/10 text-red-400"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -261,7 +261,7 @@ function CreateTemplateModal({ onClose, onSuccess }: { onClose: () => void; onSu
             >
               <option value="">Choose a trigger for this template...</option>
               {triggers.map(t => (
-                <option key={t._id} value={t._id}>{t.name} ({t.event_type})</option>
+                <option key={t.id || t._id} value={t.id || t._id}>{t.name} ({t.event_type})</option>
               ))}
             </select>
             {triggerError && <p className="text-xs text-yellow-400 mt-1">{triggerError}</p>}
@@ -361,7 +361,7 @@ function EditTemplateModal({ template, onClose, onSuccess }: { template: any; on
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await api.put(`/api/v1/email-engine/templates/${template._id}`, form, {
+      await api.put(`/api/v1/email-engine/templates/${template.id || template._id}`, form, {
         headers: getAuthHeaders()
       });
       toast.success("Template updated");

@@ -102,24 +102,21 @@ def test_permission_checker_system_owner_wildcard():
 
 @pytest.mark.asyncio
 async def test_get_current_user_with_role_fallback_uses_jwt_role(monkeypatch):
-    import app.middleware as middleware_pkg
     from app.middleware import rbac as rbac_middleware
 
-    async def fake_get_current_user(request):
-        return {
+    async def fake_get_user_roles(user_id):
+        return []
+
+    monkeypatch.setattr(rbac_middleware.RoleService, "get_user_roles", fake_get_user_roles)
+
+    user = await rbac_middleware.get_current_user_with_role(
+        {
             "sub": "user-1",
             "email": "admin@test.com",
             "role": "organization_admin",
             "organization_id": "org-1",
         }
-
-    async def fake_get_user_roles(user_id):
-        return []
-
-    monkeypatch.setattr(middleware_pkg, "get_current_user", fake_get_current_user)
-    monkeypatch.setattr(rbac_middleware.RoleService, "get_user_roles", fake_get_user_roles)
-
-    user = await rbac_middleware.get_current_user_with_role(None)
+    )
     assert user["role"] == "organization_admin"
     assert "leads:read" in user["permissions"]
     assert "notifications:read" in user["permissions"]

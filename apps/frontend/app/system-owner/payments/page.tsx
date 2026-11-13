@@ -359,9 +359,9 @@ export default function PaymentsPage() {
                       )}
                     </div>
                     <div className="text-right ml-4">
-                      {item.amount !== undefined && (
+                      {item.amount != null && !Number.isNaN(Number(item.amount)) && (
                         <div className="text-lg font-bold text-green-400">
-                          ${item.amount.toFixed(2)}
+                          ${Number(item.amount).toFixed(2)}
                         </div>
                       )}
                       <div

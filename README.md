@@ -71,9 +71,12 @@ passwords before deploying to production.
 | System Owner (platform admin) | `admin@outflo.com` | `Admin@123` | http://localhost:3000/login |
 | Organization Admin (Test Org) | `orgadmin@test.com` | `Test@1234` | http://localhost:3000/login |
 | Organization Admin (Test Company) | `testorg@demo.com` | `Test@1234` | http://localhost:3000/login |
+| Team Member (Test Company) | `teammember@test.com` | `Test@1234` | http://localhost:3000/login |
 
-**Team Member:** no team-member account is seeded. Sign in as an organization
-admin, open **Team**, and invite/create a member to test that role.
+**Team Members:** inviting a member from **Team** creates a real login account
+with the temporary password `Test@1234` (override with
+`TEAM_MEMBER_DEFAULT_PASSWORD`). The invited user can sign in immediately and
+change their password afterwards.
 
 ### Role access
 

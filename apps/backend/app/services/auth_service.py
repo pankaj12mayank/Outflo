@@ -482,6 +482,13 @@ class AuthService:
         RateLimiter.clear_failed_attempts(data["email"])
         await self._create_session(user, organization["id"], browser, os, client_info)
         await self._log_login(user["id"], organization["id"], "success", client_info)
+        try:
+            await MongoDB.get_collection("team_invitations").update_many(
+                {"email": email_normalized, "status": "pending"},
+                {"$set": {"status": "accepted", "accepted_at": datetime.utcnow()}},
+            )
+        except Exception:
+            pass
 
         tokens = self._create_tokens(user, organization["id"])
         return {

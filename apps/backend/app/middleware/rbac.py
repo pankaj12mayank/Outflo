@@ -7,9 +7,10 @@ Use require_permissions() here when loading permissions from RoleService collect
 
 from typing import List, Optional, Callable
 from functools import wraps
-from fastapi import HTTPException, status, Request, Depends
+from fastapi import HTTPException, status, Depends
 from app.services.rbac_service import RoleService, RBACService, FeatureToggleService
 from app.services.auth_service import PermissionChecker, normalize_role
+from app.middleware.auth import get_current_user
 from app.models.rbac_models import Role
 
 
@@ -28,11 +29,11 @@ class RBACMiddleware:
         return list(all_permissions)
 
 
-async def get_current_user_with_role(request: Request):
-    from app.middleware import get_current_user
-    
+async def get_current_user_with_role(
+    user: dict = Depends(get_current_user),
+):
     try:
-        user = await get_current_user(request)
+        user = dict(user)
         user_roles = await RoleService.get_user_roles(user.get("sub"))
         
         if user_roles:

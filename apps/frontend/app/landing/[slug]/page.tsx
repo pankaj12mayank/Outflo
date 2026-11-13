@@ -69,8 +69,8 @@ export default function LandingPage() {
     <>
       <Head seo={page.seo} />
       <main className="min-h-screen bg-white">
-        {page.blocks?.map((block) => (
-          <BlockRenderer key={block._id} block={block} />
+        {page.blocks?.map((block: any, index: number) => (
+          <BlockRenderer key={block?.id || block?._id || index} block={block} />
         ))}
       </main>
     </>

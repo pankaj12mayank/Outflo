@@ -14,8 +14,6 @@ from typing import List, Optional
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
 
-from fastapi import Request
-
 from app.middleware.rbac import (
     get_current_user_with_role, 
     require_role, 
@@ -29,8 +27,9 @@ from app.services.rbac_service import (
 from app.models.rbac_models import Role
 
 
-async def get_current_system_owner(request: Request):
-    user = await get_current_user_with_role(request)
+async def get_current_system_owner(
+    user: dict = Depends(get_current_user_with_role),
+):
     if user.get("role") != Role.SYSTEM_OWNER.value:
         from fastapi import HTTPException, status
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="System owner access required")

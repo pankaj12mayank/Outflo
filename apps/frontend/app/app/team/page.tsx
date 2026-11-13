@@ -143,15 +143,24 @@ export default function TeamPage() {
       toast.error("Invalid email", "Please enter a valid email address");
       return;
     }
+    const email = inviteEmail.trim();
     inviteMember.mutate(
-      { email: inviteEmail.trim(), role: inviteRole },
+      { email, role: inviteRole },
       {
-        onSuccess: () => {
+        onSuccess: (data: any) => {
           setInviteEmail("");
           setInviteRole("team_member");
           setShowInviteModal(false);
-          toast.invite(inviteEmail);
+          if (data?.temporary_password) {
+            toast.success(
+              "Team member added",
+              `${email} can log in with password: ${data.temporary_password}`
+            );
+          } else {
+            toast.invite(email);
+          }
           refetchInvites();
+          refetch();
         },
         onError: (err: unknown) => {
           const detail = (err as { response?: { data?: { detail?: string } } })?.response?.data?.detail;

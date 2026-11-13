@@ -118,8 +118,8 @@ export default function EmailQueuePage() {
                 <p className="text-gray-400 text-center py-8">No pending emails</p>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {pending.slice(0, 10).map((item) => (
-                    <div key={item._id} className="p-3 rounded-xl bg-white/5">
+                  {pending.slice(0, 10).map((item, index) => (
+                    <div key={item.id || item._id || index} className="p-3 rounded-xl bg-white/5">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-sm">{item.to_email}</div>
@@ -146,8 +146,8 @@ export default function EmailQueuePage() {
                 <p className="text-gray-400 text-center py-8">No failed emails</p>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {failed.slice(0, 10).map((item) => (
-                    <div key={item._id} className="p-3 rounded-xl bg-white/5">
+                  {failed.slice(0, 10).map((item, index) => (
+                    <div key={item.id || item._id || index} className="p-3 rounded-xl bg-white/5">
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="font-medium text-sm">{item.to_email}</div>
