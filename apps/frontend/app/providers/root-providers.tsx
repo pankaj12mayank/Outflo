@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
 import { ToastContainer } from "@/app/components/toast/toast-container";
 import ErrorBoundary from "@/app/components/error-boundary";
+import { GlobalRouteProgress } from "@/app/components/global-loading";
 import { SystemOwnerAuthProvider } from "@/app/hooks/useSystemOwnerAuth";
 
 /** Query + toasts + system owner auth — safe for public pages (landing, login). */
@@ -21,6 +22,7 @@ export function RootProviders({ children }: { children: React.ReactNode }) {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <SystemOwnerAuthProvider>
+          <GlobalRouteProgress />
           {children}
           <ToastContainer />
         </SystemOwnerAuthProvider>

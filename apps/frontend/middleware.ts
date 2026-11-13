@@ -5,7 +5,6 @@ const SUPER_ADMIN_REDIRECTS: Record<string, string> = {
   "/app/super-admin": "/system-owner/dashboard",
   "/app/super-admin/organizations": "/system-owner/organizations",
   "/app/super-admin/plans": "/system-owner/plans",
-  "/app/super-admin/settings": "/system-owner/settings",
   "/app/super-admin/cms": "/system-owner/cms",
   "/app/super-admin/billing": "/system-owner/payments",
   "/app/super-admin/monitoring": "/system-owner/dashboard",

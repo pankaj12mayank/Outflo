@@ -64,7 +64,6 @@ const systemOwnerNav = [
   { name: "Email", href: "/system-owner/email", icon: Mail, permissions: ["cms:read"] },
   { name: "Notifications", href: "/system-owner/notifications", icon: Bell, permissions: ["notifications:read"] },
   { name: "AI Providers", href: "/system-owner/ai-providers", icon: Cpu, permissions: ["ai:manage"] },
-  { name: "Settings", href: "/system-owner/settings", icon: Settings, permissions: ["settings:read"] },
   { name: "Dashboard", href: "/system-owner/dashboard", icon: BarChart3, permissions: ["analytics:read"] },
 ];
 
