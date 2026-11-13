@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api, { aiAPI } from "@/app/lib/api";
+import { useAuth } from "@/app/hooks/useAuth";
 import {
   AlertCircle,
   Building2,
@@ -137,6 +138,7 @@ function apiErrorMessage(error: unknown, fallback: string): string {
 export function AIProvidersManager({ scope = "organization" }: { scope?: Scope }) {
   const isPlatform = scope === "platform";
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -200,7 +202,10 @@ export function AIProvidersManager({ scope = "organization" }: { scope?: Scope }
 
   const orgName = (organizationId?: string | null) => {
     if (!organizationId) return "Platform-wide";
-    return organizations.find((org) => org.id === organizationId)?.name || organizationId;
+    if (isPlatform) {
+      return organizations.find((org) => org.id === organizationId)?.name || organizationId;
+    }
+    return user?.organization?.name || organizationId;
   };
 
   const visibleProviders = useMemo(() => {
