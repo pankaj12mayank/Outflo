@@ -30,6 +30,14 @@ class GoogleMapsScraper(BaseScraper):
         super().__init__(safety_config or DEFAULT_SAFETY_CONFIG)
         self.base_url = "https://www.google.com/maps/search/"
         self.results_limit = 50
+
+    async def validate_url(self, url: str) -> bool:
+        """Google Maps is this scraper's target — only require a web scheme.
+
+        The default blocked_domains list exists to stop the website crawler
+        from crawling social platforms; applying it here blocked the base URL.
+        """
+        return bool(url) and url.startswith(("http://", "https://"))
     
     async def initialize(self) -> None:
         """Initialize Playwright browser"""
@@ -92,7 +100,7 @@ class GoogleMapsScraper(BaseScraper):
         results = []
         
         try:
-            await page.goto(search_url, wait_until="networkidle", timeout=45000)
+            await page.goto(search_url, wait_until="domcontentloaded", timeout=45000)
             await self._safe_delay()
             
             # Scroll and extract results
@@ -101,8 +109,11 @@ class GoogleMapsScraper(BaseScraper):
             max_scrolls = min(limit // 10 + 2, 10)
             
             while len(results) < limit and scroll_count < max_scrolls:
-                # Wait for results to load
-                await page.wait_for_selector("div[aria-label][data-candidates]", timeout=5000)
+                # Wait for result anchors to load
+                try:
+                    await page.wait_for_selector('a[href*="/maps/place"]', timeout=8000)
+                except Exception:
+                    break
                 
                 # Extract current visible results
                 new_results = await self._extract_listing_results(page)
@@ -130,82 +141,102 @@ class GoogleMapsScraper(BaseScraper):
         return results[:limit]
     
     async def _extract_listing_results(self, page: Page) -> List[ScrapeResult]:
-        """Extract business listings from current page view"""
+        """Extract business listings from current page view.
+
+        Anchored on stable `a[href*="/maps/place"]` anchors instead of
+        class names, which churn often on Google Maps. One JS round-trip.
+        """
+        listings = await page.evaluate("""
+            () => {
+                const out = [];
+                const anchors = Array.from(document.querySelectorAll('a[href*="/maps/place"]'));
+                for (const a of anchors) {
+                    try {
+                        let card = a.closest('div[role="listitem"]');
+                        if (!card) {
+                            let node = a;
+                            for (let i = 0; i < 8 && node; i++) {
+                                node = node.parentElement;
+                                if (!node) break;
+                                const t = node.innerText || '';
+                                if (/\\d\\.\\d/.test(t) && t.length < 2500) break;
+                            }
+                            card = node || a.parentElement;
+                        }
+                        const text = (card && card.innerText) || a.innerText || '';
+                        const lines = text.split('\\n').map(s => s.trim()).filter(Boolean);
+                        const name = (a.innerText || '').trim().split('\\n')[0].trim();
+                        const ratingLine = lines.find(l => /^\\d(\\.\\d)?/.test(l)) || '';
+                        const rating = (ratingLine.match(/\\d(\\.\\d)?/) || [null])[0];
+                        const reviews = (ratingLine.match(/\\(([\\d,]+)\\)/) || [null, null])[1];
+                        const phoneLine = lines.find(l => /\\+?\\d[\\d\\s().-]{8,}\\d/.test(l));
+                        let category = null, address = null;
+                        const junkLine = /^(Directions|Save|Share|Call|Hours|Website|Open now|Closes soon|Closed|Open 24 hours)$/i;
+                        const iconLine = /^[\uE000-\uF8FF\s·•|]+$/;
+                        for (const line of lines) {
+                            if (!name || line === name) continue;
+                            if (/^\\d(\\.\\d)?/.test(line)) continue;
+                            if (phoneLine && line === phoneLine) continue;
+                            if (junkLine.test(line) || iconLine.test(line)) continue;
+                            if (!category) { category = line; continue; }
+                            if (!address) { address = line; }
+                        }
+                        // Google renders "Category · Address" as one line
+                        if (category && !address && category.includes(' · ')) {
+                            const parts = category.split(' · ');
+                            category = parts[0].trim();
+                            address = parts.slice(1).join(' · ').trim();
+                        }
+                        const siteA = card ? card.querySelector('a[data-item-id="website"]') : null;
+                        out.push({
+                            name,
+                            href: a.href,
+                            rating,
+                            reviews,
+                            phone: phoneLine ? (phoneLine.match(/\\+?[\\d\\s().-]{8,}\\d/) || [null])[0].trim() : null,
+                            category,
+                            address,
+                            website: siteA ? siteA.href : null,
+                        });
+                    } catch (e) { /* skip bad card */ }
+                }
+                const seen = new Set();
+                return out.filter(r => r.href && !seen.has(r.href) && seen.add(r.href));
+            }
+        """)
+
         results = []
-        
-        # Find listing elements
-        listings = await page.query_selector_all('div[data-candidates] > div')
-        
-        for listing in listings:
+        for item in listings[: self.results_limit]:
             try:
-                # Extract business name
-                name_elem = await listing.query_selector('div.fontMedium')
-                business_name = await name_elem.inner_text() if name_elem else None
-                
+                business_name = (item.get("name") or "").strip()
                 if not business_name:
                     continue
-                
-                # Extract rating
-                rating_elem = await listing.query_selector('span.kvMDzf')
-                rating = await rating_elem.inner_text() if rating_elem else None
-                
-                # Extract reviews count
-                reviews_elem = await listing.query_selector('span.hpKjrc')
-                reviews = await reviews_elem.inner_text() if reviews_elem else None
-                
-                # Extract category
-                category_elem = await listing.query_selector('div.fontCaption')
-                category = await category_elem.inner_text() if category_elem else None
-                
-                # Extract address
-                address_elem = await listing.query_selector('div.fontBodyMedium span')
-                address = await address_elem.inner_text() if address_elem else None
-                
-                # Extract phone
-                phone_elem = await listing.query_selector('div[data-item-id="phone"]')
-                phone = None
-                if phone_elem:
-                    phone_text = await phone_elem.inner_text()
-                    phone = self._extract_phone(phone_text)
-                
-                # Extract website URL
-                website_elem = await listing.query_selector('a[data-item-id="website"]')
-                website_url = None
-                if website_elem:
-                    website_url = await website_elem.get_attribute("href")
-                
-                # Get the listing URL for detailed extraction
-                listing_link = await listing.query_selector('a[href*="/maps/place"]')
-                place_url = None
-                if listing_link:
-                    place_url = await listing_link.get_attribute("href")
-                
+
                 result = ScrapeResult(
                     success=True,
                     source=ScrapeSource.GOOGLE_MAPS,
-                    business_name=business_name.strip() if business_name else None,
-                    address=address.strip() if address else None,
-                    category=category.strip() if category else None,
-                    source_url=place_url,
+                    business_name=business_name,
+                    address=(item.get("address") or "").strip() or None,
+                    category=(item.get("category") or "").strip() or None,
+                    source_url=item.get("href"),
                     raw_data={
-                        "rating": rating,
-                        "reviews": reviews,
-                        "full_address": address,
-                    }
+                        "rating": item.get("rating"),
+                        "reviews": item.get("reviews"),
+                        "full_address": item.get("address"),
+                    },
                 )
-                
-                if website_url:
-                    result.website = self._clean_url(website_url)
-                
-                if phone:
-                    result.phone = phone
-                
+
+                if item.get("website"):
+                    result.website = self._clean_url(item["website"])
+
+                if item.get("phone"):
+                    result.phone = item["phone"]
+
                 results.append(result)
-                
             except Exception as e:
-                self.logger.debug(f"Error extracting listing: {e}")
+                self.logger.debug(f"Error mapping listing: {e}")
                 continue
-        
+
         return results
     
     async def scrape(self, url: str, **kwargs) -> ScrapeResult:
@@ -231,7 +262,7 @@ class GoogleMapsScraper(BaseScraper):
         page = await self.context.new_page()
         
         try:
-            await page.goto(url, wait_until="networkidle", timeout=45000)
+            await page.goto(url, wait_until="domcontentloaded", timeout=45000)
             await self._safe_delay()
             
             # Extract all details
@@ -311,9 +342,12 @@ class GoogleMapsScraper(BaseScraper):
             # Scroll the results container
             await page.evaluate("""
                 () => {
-                    const container = document.querySelector('[aria-label][data-candidates]');
+                    const container = document.querySelector('div[role="feed"]')
+                        || document.querySelector('[aria-label][data-candidates]');
                     if (container) {
                         container.scrollBy(0, 500);
+                    } else {
+                        window.scrollBy(0, 500);
                     }
                 }
             """)

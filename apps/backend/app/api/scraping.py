@@ -88,21 +88,51 @@ async def website_crawl_sync(
     data: dict,
     current_user: dict = Depends(_scraping_create),
 ):
+    """Synchronously crawl a website and return flattened contact data."""
+    from app.services.scraping import get_scraping_service
+
     url = data.get("url", "")
-    emails = data.get("emails") or []
-    phones = data.get("phones") or []
+    if not url:
+        raise HTTPException(400, "url is required")
+
+    service = get_scraping_service()
+    try:
+        result = await service.crawl_website(
+            url, crawl_contact_pages=bool(data.get("crawl_contact_pages", True))
+        )
+    except Exception as e:
+        import traceback
+        print("WEBSITE_CRAWL_SYNC_TRACEBACK:")
+        traceback.print_exc()
+        raise HTTPException(502, f"Crawl failed: {e}")
+
+    payload = result.to_dict()
+    raw = payload.get("raw_data") or {}
+    emails = raw.get("emails") or []
+    phones = raw.get("phones") or []
+    social = raw.get("social_links") or {}
+    title = raw.get("title") or payload.get("business_name") or ""
+    pages = raw.get("pages_crawled") or ["Homepage"]
+
     return {
         "url": url,
         "website": url,
-        "title": data.get("title", ""),
-        "description": data.get("description", ""),
+        "title": title,
+        "business_name": payload.get("business_name") or title,
+        "description": raw.get("description", ""),
         "emails": emails,
         "phones": phones,
-        "phone": phones[0] if phones else "",
-        "has_contact_form": bool(data.get("has_contact_form", False)),
-        "has_cta": bool(data.get("has_cta", False)),
-        "pages_crawled": data.get("pages_crawled") or ["Homepage"],
-        "social_links": data.get("social_links") or {},
+        "phone": payload.get("phone") or (phones[0] if phones else ""),
+        "whatsapp": payload.get("whatsapp") or raw.get("whatsapp") or "",
+        "calendly": payload.get("calendly") or raw.get("calendly") or "",
+        "has_contact_form": bool(payload.get("has_contact_form")),
+        "has_cta": bool(payload.get("has_cta")),
+        "social_links": social,
+        "pages_crawled": pages,
+        "forms_count": raw.get("forms_count", 0),
+        "ctas_count": raw.get("ctas_count", 0),
+        "data_quality_score": payload.get("data_quality_score", 0),
+        "success": bool(payload.get("success")),
     }
 
 
@@ -131,16 +161,33 @@ async def linkedin_enrich_sync(
     data: dict,
     current_user: dict = Depends(_scraping_create),
 ):
+    """Synchronously enrich a LinkedIn profile URL with public data."""
+    from app.services.scraping import get_scraping_service
+
     url = data.get("linkedin_url") or data.get("url", "")
+    if not url:
+        raise HTTPException(400, "linkedin_url is required")
+
+    service = get_scraping_service()
+    try:
+        result = await service.enrich_linkedin(url)
+    except Exception as e:
+        raise HTTPException(502, f"Enrichment failed: {e}")
+
+    payload = result.to_dict()
     return {
         "linkedin_url": url,
         "url": url,
-        "name": data.get("name", ""),
-        "title": data.get("title", ""),
-        "company": data.get("company", ""),
-        "location": data.get("location", ""),
-        "email": data.get("email", ""),
-        "enriched": True,
+        "name": payload.get("linkedin_name") or payload.get("business_name") or "",
+        "title": payload.get("linkedin_title") or "",
+        "company": payload.get("linkedin_company") or payload.get("business_name") or "",
+        "location": payload.get("linkedin_location") or payload.get("city") or "",
+        "email": payload.get("email") or "",
+        "about": (payload.get("raw_data") or {}).get("about", ""),
+        "enriched": bool(payload.get("success")),
+        "success": bool(payload.get("success")),
+        "error": payload.get("error_message"),
+        "data_quality_score": payload.get("data_quality_score", 0),
     }
 
 
@@ -185,6 +232,7 @@ async def csv_import(
 @router.get("/jobs")
 async def list_jobs(
     status: Optional[str] = None,
+    limit: int = 100,
     current_user: dict = Depends(_scraping_read),
 ):
     org_id = current_user.get("organization_id")
@@ -192,15 +240,19 @@ async def list_jobs(
     query = {"organization_id": org_id}
     if status:
         query["status"] = status
-    cursor = coll.find(query).sort("created_at", -1)
+    cursor = coll.find(query).sort("_id", -1).limit(max(1, min(limit, 500)))
     jobs = []
     async for doc in cursor:
         jobs.append({
             "id": str(doc["_id"]),
             "status": doc.get("status"),
             "job_type": doc.get("job_type"),
+            "params": doc.get("params") or {},
             "total_items": doc.get("total_items", 0),
+            "results_count": doc.get("results_count", 0),
             "created_at": doc.get("created_at"),
+            "completed_at": doc.get("completed_at"),
+            "error": doc.get("error"),
         })
     return jobs
 
@@ -222,7 +274,11 @@ async def get_job(
         "job_type": doc.get("job_type"),
         "params": doc.get("params"),
         "total_items": doc.get("total_items", 0),
+        "results_count": doc.get("results_count", 0),
         "created_at": doc.get("created_at"),
+        "started_at": doc.get("started_at"),
+        "completed_at": doc.get("completed_at"),
+        "error": doc.get("error"),
     }
 
 
@@ -263,12 +319,16 @@ async def retry_job(
 @router.get("/jobs/{job_id}/results")
 async def get_job_results(
     job_id: str,
+    skip: int = 0,
+    limit: int = 100,
     current_user: dict = Depends(_scraping_read),
 ):
     from bson import ObjectId
     org_id = current_user.get("organization_id")
     coll = MongoDB.get_collection("scraping_results")
-    cursor = coll.find({"job_id": job_id, "organization_id": org_id}).limit(100)
+    cursor = coll.find({"job_id": job_id, "organization_id": org_id}).skip(
+        max(0, skip)
+    ).limit(max(1, min(limit, 500)))
     results = []
     async for doc in cursor:
         results.append({
@@ -309,9 +369,10 @@ async def scraping_stats(
     total = await coll.count_documents({"organization_id": org_id})
     running = await coll.count_documents({"organization_id": org_id, "status": "running"})
     completed = await coll.count_documents({"organization_id": org_id, "status": "completed"})
+    failed = await coll.count_documents({"organization_id": org_id, "status": "failed"})
     return {
         "total_jobs": total,
         "running": running,
         "completed": completed,
-        "failed": max(0, total - running - completed),
+        "failed": failed,
     }

@@ -7,6 +7,7 @@ from apscheduler.triggers.interval import IntervalTrigger
 from bson import ObjectId
 
 from app.db.mongodb import MongoDB, serialize_doc
+from app.services.scraping.runner import requeue_stale_jobs, run_pending_scraping_jobs
 from app.services.task_service import TaskService
 
 
@@ -16,11 +17,24 @@ class PollingService:
         self._running = False
 
     async def start(self):
+        # Recover jobs left "running" by a crashed worker.
+        try:
+            await requeue_stale_jobs()
+        except Exception as e:
+            print(f"Error requeueing stale scraping jobs: {e}")
+
         self.scheduler.add_job(
             self.check_pending_tasks,
             trigger=IntervalTrigger(seconds=5),
             id="check_pending_tasks",
             replace_existing=True,
+        )
+        self.scheduler.add_job(
+            self.check_scraping_jobs,
+            trigger=IntervalTrigger(seconds=5),
+            id="check_scraping_jobs",
+            replace_existing=True,
+            max_instances=1,
         )
         self.scheduler.add_job(
             self.check_campaign_schedules,
@@ -52,6 +66,13 @@ class PollingService:
                 await self.process_task(task, task_service)
         except Exception as e:
             print(f"Error checking pending tasks: {e}")
+
+    async def check_scraping_jobs(self):
+        """Claim and run pending scraping jobs (single execution path)."""
+        try:
+            await run_pending_scraping_jobs(limit=1)
+        except Exception as e:
+            print(f"Error running scraping jobs: {e}")
 
     async def process_task(self, task: dict, task_service: TaskService):
         task_id = task.get("id")

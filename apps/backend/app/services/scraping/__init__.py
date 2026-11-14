@@ -3,6 +3,8 @@ Outflo - Safe Scraping Engine Architecture
 Production-grade scraping with ethical practices
 """
 
+from typing import Any, List
+
 from .base import BaseScraper, ScrapeResult, ScrapeStatus, ScrapeSource, SafetyConfig
 from .google_maps import GoogleMapsScraper
 from .website import WebsiteCrawler
@@ -47,14 +49,34 @@ class ScrapingService:
         self.rate_limiter = RateLimiter()
         self.ua_rotator = UserAgentRotator()
 
-    async def crawl_website(self, url: str, crawl_contact_pages: bool = True) -> dict:
+    async def crawl_website(self, url: str, crawl_contact_pages: bool = True) -> Any:
         crawler = WebsiteCrawler(safety_config=DEFAULT_SAFETY_CONFIG)
-        return await crawler.crawl(url, crawl_contact_pages=crawl_contact_pages)
+        await crawler.initialize()
+        try:
+            return await crawler.scrape(url)
+        finally:
+            await crawler.cleanup()
 
-    async def search_google_maps(self, keyword: str, location: str = "", limit: int = 20) -> dict:
+    async def search_google_maps(self, keyword: str, location: str = "", limit: int = 20) -> List[Any]:
         scraper = GoogleMapsScraper(safety_config=DEFAULT_SAFETY_CONFIG)
-        return await scraper.search(keyword, location, limit=limit)
+        await scraper.initialize()
+        try:
+            return await scraper.search(keyword, location, limit=limit)
+        finally:
+            await scraper.cleanup()
 
-    async def enrich_linkedin(self, linkedin_url: str) -> dict:
+    async def scrape_google_maps_place(self, url: str) -> Any:
+        scraper = GoogleMapsScraper(safety_config=DEFAULT_SAFETY_CONFIG)
+        await scraper.initialize()
+        try:
+            return await scraper.scrape(url)
+        finally:
+            await scraper.cleanup()
+
+    async def enrich_linkedin(self, linkedin_url: str) -> Any:
         enricher = LinkedInEnricher(safety_config=DEFAULT_SAFETY_CONFIG)
-        return await enricher.enrich(linkedin_url)
+        await enricher.initialize()
+        try:
+            return await enricher.enrich(linkedin_url)
+        finally:
+            await enricher.cleanup()

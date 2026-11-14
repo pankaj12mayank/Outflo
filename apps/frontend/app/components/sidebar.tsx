@@ -375,15 +375,15 @@ export function Sidebar() {
               >
                 {collapsed ? (
                   <SidebarTooltip content={item.name}>
-                    <NavItem href={item.href} icon={item.icon} collapsed={collapsed} />
+                    <NavItem href={item.href} icon={item.icon} collapsed={collapsed}>{item.name}</NavItem>
                   </SidebarTooltip>
                 ) : (
-                  <NavItem 
-                    href={item.href} 
-                    icon={item.icon} 
+                  <NavItem
+                    href={item.href}
+                    icon={item.icon}
                     collapsed={collapsed}
                     isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-                  />
+                  >{item.name}</NavItem>
                 )}
               </motion.div>
             ))}
@@ -400,7 +400,7 @@ export function Sidebar() {
                 >
                   {collapsed ? (
                     <SidebarTooltip content={item.name}>
-                      <NavItem href={item.href} icon={item.icon} collapsed={collapsed} />
+                      <NavItem href={item.href} icon={item.icon} collapsed={collapsed}>{item.name}</NavItem>
                     </SidebarTooltip>
                   ) : (
                     <NavItem 
@@ -408,7 +408,7 @@ export function Sidebar() {
                       icon={item.icon} 
                       collapsed={collapsed}
                       isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-                    />
+                    >{item.name}</NavItem>
                   )}
                 </motion.div>
               ))}
@@ -419,13 +419,13 @@ export function Sidebar() {
         <div className="p-3 border-t border-[var(--color-border)] space-y-2">
           <NavSection defaultOpen={false} collapsed={collapsed}>
             {filteredSettingsNav.map((item) => (
-              <NavItem 
-                key={item.name} 
-                href={item.href} 
+              <NavItem
+                key={item.name}
+                href={item.href}
                 icon={item.icon}
                 collapsed={collapsed}
                 isActive={pathname === item.href || pathname.startsWith(item.href + "/")}
-              />
+              >{item.name}</NavItem>
             ))}
           </NavSection>
 
@@ -456,7 +456,7 @@ export function Sidebar() {
                       {user?.full_name || "User"}
                     </div>
                     <div className="text-xs text-[var(--color-text-tertiary)] capitalize">
-                      {role?.replace("_", " ") || "Team Member"}
+                      {role?.replace(/_/g, " ") || "Team Member"}
                     </div>
                   </div>
                 </div>

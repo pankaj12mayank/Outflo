@@ -35,8 +35,8 @@ class LinkedInEnricher(BaseScraper):
     ]
     
     def __init__(self, safety_config: Optional[SafetyConfig] = None):
+        # NOTE: linkedin.com is the whole point of this enricher — do NOT block it here.
         super().__init__(safety_config or DEFAULT_SAFETY_CONFIG)
-        self.blocked_domains.extend(['linkedin.com'])
     
     async def initialize(self) -> None:
         """Initialize Playwright browser"""
@@ -108,7 +108,22 @@ class LinkedInEnricher(BaseScraper):
             
             # Extract profile data
             result = await self._extract_profile(page, result)
-            
+
+            # LinkedIn serves near-empty pages to unauthenticated visitors;
+            # surface that as a failed enrichment instead of silent empties.
+            if not any([
+                result.linkedin_name,
+                result.linkedin_title,
+                result.linkedin_company,
+                result.linkedin_location,
+                result.email,
+            ]):
+                result.success = False
+                result.error_message = (
+                    result.error_message
+                    or "No public profile data found (login wall or rate-limited)"
+                )
+
             # Calculate quality
             result.data_quality_score = self.calculate_quality_score(result)
             

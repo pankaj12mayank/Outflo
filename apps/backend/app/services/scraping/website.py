@@ -140,6 +140,16 @@ class WebsiteCrawler(BaseScraper):
             
             # Calculate quality
             result.data_quality_score = self.calculate_quality_score(result)
+
+            # Surface full extracted data on raw_data (API consumers read
+            # emails / phones / social_links / pages_crawled / title from it)
+            result.raw_data["emails"] = self._unique_emails(extracted_data["emails"])
+            result.raw_data["phones"] = list(dict.fromkeys(extracted_data["phones"]))
+            result.raw_data["social_links"] = extracted_data["social_links"]
+            result.raw_data["pages_crawled"] = sorted(visited_urls)
+            result.raw_data["title"] = extracted_data.get("title") or ""
+            result.raw_data["forms_count"] = len(extracted_data["forms"])
+            result.raw_data["ctas_count"] = len(extracted_data["ctas"])
             
         except Exception as e:
             self.logger.error(f"Error crawling website: {e}")
@@ -181,6 +191,13 @@ class WebsiteCrawler(BaseScraper):
             # Extract emails
             emails = self.email_pattern.findall(text)
             data["emails"].extend([e.lower() for e in emails if self._is_valid_email(e)])
+
+            # Remember the first (homepage) title for API consumers
+            if not data.get("title"):
+                try:
+                    data["title"] = await page.title()
+                except Exception:
+                    pass
             
             # Extract phones
             phones = self._extract_phones(text)
@@ -303,17 +320,28 @@ class WebsiteCrawler(BaseScraper):
         """Deduplicate and return primary email"""
         if not emails:
             return None
-        
+
+        unique = self._unique_emails(emails)
+
         # Priority order for primary email
         priority_patterns = ['info@', 'contact@', 'hello@', 'sales@', 'support@']
-        
+
         for pattern in priority_patterns:
-            for email in emails:
+            for email in unique:
                 if pattern in email.lower():
                     return email
-        
+
         # Return first valid email
-        return emails[0] if emails else None
+        return unique[0] if unique else None
+
+    def _unique_emails(self, emails: List[str]) -> List[str]:
+        """Deduplicate emails preserving first-seen order"""
+        seen: List[str] = []
+        for email in emails:
+            email_lower = email.lower()
+            if email_lower not in seen:
+                seen.append(email_lower)
+        return seen
     
     def _parse_social_link(self, href: str) -> Dict[str, str]:
         """Parse social link and return platform"""

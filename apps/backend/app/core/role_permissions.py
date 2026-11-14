@@ -46,13 +46,30 @@ ORGANIZATION_ADMIN_PERMISSIONS = [
 ]
 
 TEAM_MEMBER_PERMISSIONS = [
+    # Read-only access to team info
     "teams:read",
+    # Team members own day-to-day lead generation work: view, create,
+    # work and enrich leads, and run scraping tools.
     "leads:read",
     "leads:create",
     "leads:update",
+    "leads:enrich",
+    # Members execute campaigns & sequences, but destructive actions
+    # (delete, start/pause) stay with organization_admin.
     "campaigns:read",
+    "campaigns:create",
+    "campaigns:update",
     "sequences:read",
+    "sequences:create",
+    "sequences:update",
+    # Scraping is the core work scope — full read/create/update.
+    # Deletes stay with organization_admin.
     "scraping:read",
+    "scraping:create",
+    "scraping:update",
+    # Read their own analytics; no export/billing/admin access.
+    "analytics:read",
+    "notifications:read",
     "settings:read",
     "ai:read",
     "ai:write",

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   MapPin,
@@ -23,6 +23,7 @@ import { Button } from "@/app/components/ui/button";
 import { Input } from "@/app/components/ui/input";
 import { Badge } from "@/app/components/ui/badge";
 import { useGoogleMapsSearch } from "@/app/hooks/use-scraping";
+import { scrapingAPI } from "@/app/lib/api";
 import { toast } from "@/app/components/toast";
 import Link from "next/link";
 
@@ -43,19 +44,85 @@ export default function GoogleMapsScraperPage() {
   const [results, setResults] = useState<MapResult[]>([]);
   const [selectedResults, setSelectedResults] = useState<string[]>([]);
   const [lastJobId, setLastJobId] = useState<string | null>(null);
+  const [pollingJobId, setPollingJobId] = useState<string | null>(null);
   const searchMutation = useGoogleMapsSearch();
 
   const handleSearch = async () => {
     if (!keyword) return;
     try {
       const res = await searchMutation.mutateAsync({ keyword, location, limit });
-      setLastJobId(res?.id || res?.job_id || null);
-      toast.success("Search queued", "Check Scraping → Recent Jobs for progress.");
+      const jobId = res?.id || res?.job_id || null;
+      setLastJobId(jobId);
       setResults([]);
+      setSelectedResults([]);
+      if (jobId) {
+        // Job runs in the background — poll until it completes, then load results.
+        setPollingJobId(jobId);
+        toast.success("Search started", "Running in the background — results will appear here.");
+      } else {
+        toast.success("Search queued", "Check Scraping → Recent Jobs for progress.");
+      }
     } catch (e: any) {
       toast.error("Search failed", e?.response?.data?.detail || e?.message || "Unknown error");
     }
   };
+
+  // Poll a running Google Maps job, then fetch and map its results.
+  useEffect(() => {
+    if (!pollingJobId) return;
+    let cancelled = false;
+
+    const finish = () => setPollingJobId(null);
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await scrapingAPI.getJob(pollingJobId);
+        const job = res?.data;
+        if (job?.status === "completed") {
+          clearInterval(interval);
+          const resultsRes = await scrapingAPI.getJobResults(pollingJobId, { limit: 500 });
+          if (cancelled) return;
+          const items = Array.isArray(resultsRes?.data) ? resultsRes.data : [];
+          const mapped: MapResult[] = items.map((item: any, idx: number) => {
+            const d = item?.data || {};
+            return {
+              id: String(item?.id ?? idx),
+              name: d.business_name || "Unknown business",
+              website: d.website || undefined,
+              phone: d.phone || undefined,
+              address: d.address || undefined,
+              category: d.category || undefined,
+              email: d.email || undefined,
+            };
+          });
+          setResults(mapped);
+          setSelectedResults([]);
+          finish();
+          toast.success("Search complete", `Found ${mapped.length} business${mapped.length === 1 ? "" : "es"}.`);
+        } else if (job?.status === "failed") {
+          clearInterval(interval);
+          finish();
+          toast.error("Search failed", job?.error || "The scraping job failed.");
+        }
+      } catch {
+        /* transient error — keep polling */
+      }
+    }, 3000);
+
+    const timeout = setTimeout(() => {
+      clearInterval(interval);
+      if (!cancelled) {
+        finish();
+        toast.error("Search timed out", "The job is taking too long — check Scraping → Jobs.");
+      }
+    }, 150000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [pollingJobId]);
 
   const toggleSelection = (id: string) => {
     setSelectedResults((prev) =>
@@ -119,10 +186,10 @@ export default function GoogleMapsScraperPage() {
 
         <Button
           onClick={handleSearch}
-          disabled={!keyword || searchMutation.isPending}
+          disabled={!keyword || searchMutation.isPending || !!pollingJobId}
           className="gap-2"
         >
-          {searchMutation.isPending ? (
+          {searchMutation.isPending || pollingJobId ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
               Searching...
