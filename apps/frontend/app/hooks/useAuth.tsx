@@ -78,7 +78,7 @@ export interface AuthContextType extends AuthState {
   verifyEmail: (token: string) => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const ROLE_ALIASES: Record<string, string> = {
   admin: "organization_admin",

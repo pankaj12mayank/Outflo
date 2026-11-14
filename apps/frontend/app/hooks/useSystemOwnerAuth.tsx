@@ -35,7 +35,7 @@ interface SystemOwnerAuthContextType extends SystemOwnerAuthState {
   getActivityLogs: () => Promise<any[]>;
 }
 
-const SystemOwnerAuthContext = createContext<SystemOwnerAuthContextType | undefined>(undefined);
+export const SystemOwnerAuthContext = createContext<SystemOwnerAuthContextType | undefined>(undefined);
 
 export function SystemOwnerAuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter();

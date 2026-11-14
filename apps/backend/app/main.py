@@ -152,6 +152,17 @@ async def root():
     return {"message": "Outflo API", "version": settings.app_version, "status": "healthy"}
 
 
+@app.get("/health")
+async def health():
+    """Lightweight health check (no DB dependency) for load balancers / uptime monitors."""
+    return {
+        "status": "healthy",
+        "service": settings.app_name,
+        "version": settings.app_version,
+        "timestamp": time.time(),
+    }
+
+
 @app.get("/api/v1/health")
 async def health_check():
     return {

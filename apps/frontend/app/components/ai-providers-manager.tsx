@@ -1,9 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import api, { aiAPI } from "@/app/lib/api";
-import { useAuth } from "@/app/hooks/useAuth";
+import { AuthContext } from "@/app/hooks/useAuth";
+import { SystemOwnerAuthContext } from "@/app/hooks/useSystemOwnerAuth";
 import {
   AlertCircle,
   Building2,
@@ -138,7 +139,9 @@ function apiErrorMessage(error: unknown, fallback: string): string {
 export function AIProvidersManager({ scope = "organization" }: { scope?: Scope }) {
   const isPlatform = scope === "platform";
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const authContext = useContext(AuthContext);
+  const systemOwnerContext = useContext(SystemOwnerAuthContext);
+  const user = authContext?.user ?? systemOwnerContext?.user ?? null;
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -205,7 +208,7 @@ export function AIProvidersManager({ scope = "organization" }: { scope?: Scope }
     if (isPlatform) {
       return organizations.find((org) => org.id === organizationId)?.name || organizationId;
     }
-    return user?.organization?.name || organizationId;
+    return authContext?.user?.organization?.name || organizationId;
   };
 
   const visibleProviders = useMemo(() => {
